@@ -4,7 +4,7 @@
 
 Zucker is an experimental System-on-a-Chip (SOC) designed for Lone Dynamics FPGA computers that provides a RISC-V CPU ([PicoRV32](https://github.com/YosysHQ/picorv32)), a simple GPU, memory controllers, a keyboard controller and a UART. This repo also contains firmware, a minimal OS and example applications.
 
-Zucker was created as a demo platform and a starting point for developing gateware and apps on the Riegel FPGA computer. The goal of Zucker is to allow Riegel to be used as a stand-alone [timeless](https://machdyne.com/2022/01/12/timeless-computing/) personal computer system when attached to a keyboard and monitor.
+Zucker was created as a demo platform and a starting point for developing gateware and apps on the Riegel FPGA computer. The goal of Zucker is to allow Riegel to be used as a stand-alone [timeless](https://machdyne.com/2022/01/12/timeless-computing/) personal computer system when attached to a keyboard and a monitor.
 
 ## Supported Boards
 
@@ -61,7 +61,7 @@ See apps/hello for an example application. You can create your own apps by makin
 | ``00000000`` | ``000017ff`` | 6144 | BRAM (ZBL firmware) |
 | ``10000000`` | ``100007cf`` | 2000 | BRAM (video text memory) |
 | ``20000000`` | ``2007ffff`` | 512KB | SRAM (video graphic memory) |
-| ``40000000`` | ``43ffffff`` | 64MB | HRAM (main memory) |
+| ``40000000`` | ``43ffffff`` | 32MB-64MB | HRAM or QQSPI (main memory) |
 | ``80000000`` | ``8fffffff`` | - | MMOD (read-only flash memory) |
 | ``f0000000`` | ``f0000000`` | 1 | UART data register |
 | ``f0000004`` | ``f0000004`` | 1 | UART control register |
