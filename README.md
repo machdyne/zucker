@@ -44,6 +44,8 @@ The source code for ZBL is located in [firmware.c](firmware/firmware.c) and it's
 
 LIX is a minimal OS and second stage bootloader. LIX is capable of loading and booting apps from a FAT-formatted SD card. LIX is programmed onto the flash MMOD after the FPGA configuration image.
 
+The source code for LIX is located in [apps/lix](apps/lix).
+
 If a file named BOOT.BIN is located in the root directory of the SD card it will be loaded into main memory and run automatically at boot time.
 
 ### Apps
