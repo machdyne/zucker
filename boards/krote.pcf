@@ -1,0 +1,90 @@
+# Krote V0
+# --------
+
+set_io CLK_100 B6
+
+set_io LED_A	E2
+set_io LED_R	F1
+set_io LED_G	G2
+set_io LED_B	J2
+
+# VGA (PMOD A + B)
+set_io VGA_R		G3
+set_io VGA_B		F2
+set_io VGA_G		A4
+set_io VGA_HS		D1
+set_io VGA_VS		C1
+
+# QQSPI (PMOD C)
+set_io QQSPI_SS	A8
+set_io QQSPI_MOSI	A10
+set_io QQSPI_MISO	A11
+set_io QQSPI_SCK	C11
+set_io QQSPI_SIO2	A9
+set_io QQSPI_SIO3	D10
+set_io QQSPI_CS1	B11
+set_io QQSPI_CS0	D11
+
+# SDCARD (PMOD D)
+set_io SPI_SS_SD	E9
+set_io SPI_SCK		H11
+set_io SPI_MISO	F10
+set_io SPI_MOSI	G10
+
+# UART (PMOD E)
+set_io UART_CTS	L8
+set_io UART_RX		K5
+set_io UART_TX		K3
+set_io UART_RTS	L5
+
+# --
+
+# PMOD_A
+#set_io --warn-no-port PMOD_A1  E1
+#set_io --warn-no-port PMOD_A2  B1
+#set_io --warn-no-port PMOD_A3  A2
+#set_io --warn-no-port PMOD_A4  A4
+#set_io --warn-no-port PMOD_A7  D1
+#set_io --warn-no-port PMOD_A8  C1
+#set_io --warn-no-port PMOD_A9  A1
+#set_io --warn-no-port PMOD_A10 A3
+
+# PMOD_B
+#set_io --warn-no-port PMOD_B1  L3
+#set_io --warn-no-port PMOD_B2  L1
+#set_io --warn-no-port PMOD_B3  H1
+#set_io --warn-no-port PMOD_B4  G3
+#set_io --warn-no-port PMOD_B7  L2
+#set_io --warn-no-port PMOD_B8  K1
+#set_io --warn-no-port PMOD_B9  J1
+#set_io --warn-no-port PMOD_B10 F2
+
+# PMOD_C
+#set_io --warn-no-port PMOD_C1  A8
+#set_io --warn-no-port PMOD_C2  A10
+#set_io --warn-no-port PMOD_C3  A11
+#set_io --warn-no-port PMOD_C4  C11
+#set_io --warn-no-port PMOD_C7  A9
+#set_io --warn-no-port PMOD_C8  D10
+#set_io --warn-no-port PMOD_C9  B11
+#set_io --warn-no-port PMOD_C10 D11
+
+# PMOD_D
+#set_io --warn-no-port PMOD_D1  E9
+#set_io --warn-no-port PMOD_D2  G10
+#set_io --warn-no-port PMOD_D3  F10
+#set_io --warn-no-port PMOD_D4  H11
+#set_io --warn-no-port PMOD_D7  E11
+#set_io --warn-no-port PMOD_D8  G11
+#set_io --warn-no-port PMOD_D9  G9
+#set_io --warn-no-port PMOD_D10 H10
+
+# PMOD_E
+#set_io --warn-no-port PMOD_E1  L8
+#set_io --warn-no-port PMOD_E2  K5
+#set_io --warn-no-port PMOD_E3  K3
+#set_io --warn-no-port PMOD_E4  L5
+#set_io --warn-no-port PMOD_E7  L7
+#set_io --warn-no-port PMOD_E8  K4
+#set_io --warn-no-port PMOD_E9  K2
+#set_io --warn-no-port PMOD_E10 L4
