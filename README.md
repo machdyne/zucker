@@ -9,7 +9,7 @@ Zucker was created as a demo platform and a starting point for developing gatewa
 ## Supported Boards
 
 - [Riegel](https://machedyne.com/product/riegel-computer)
-- [Krote](https://machdyne.com/product/krote-fpga-board/)
+- [Kröte](https://machdyne.com/product/krote-fpga-board/)
 - [IcoBoard](http://icoboard.org/)
 
 ## Getting Started
