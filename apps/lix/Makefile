@@ -6,7 +6,7 @@ CFLAGS = --std=gnu99 -Os -MD -Wall -march=$(ARCH) -mabi=$(ABI) -Iinclude -Ifs/fa
 LDSCRIPT = ../common/riscv-psram-lix.ld
 LIBS = -lm -lgcc
 
-OBJS = lix.o sh.o zucker.o fs/fs.o fs/fatfs/sdmm.o fs/fatfs/ff.o
+OBJS = lix.o sh.o xfer.o zucker.o fs/fs.o fs/fatfs/sdmm.o fs/fatfs/ff.o
 
 lix: lix.elf lix.bin
 
@@ -14,10 +14,12 @@ lix.o:
 	$(CC) $(CFLAGS) -c ../common/zucker.c -o zucker.o
 	$(CC) $(CFLAGS) -c lix.c -o lix.o
 	$(CC) $(CFLAGS) -c sh.c -o sh.o
+	$(CC) $(CFLAGS) -c xfer.c -o xfer.o
 	$(CC) $(CFLAGS) -c fs/fs.c -o fs/fs.o
 	$(CC) $(CFLAGS) -c fs/fatfs/sdmm.c -o fs/fatfs/sdmm.o
 	$(CC) $(CFLAGS) -c fs/fatfs/ff.c -o fs/fatfs/ff.o
 	$(CC) $(CFLAGS) -c fs/fs.c -o fs/fs.o
+	#$(CC) $(CFLAGS) -c lix.c -S -o lix.asm
 
 lix.elf: $(OBJS)
 	$(CC) -Wl,-T$(LDSCRIPT),-Map,lix.map -o lix.elf $(OBJS) $(LIBS)
@@ -25,9 +27,6 @@ lix.elf: $(OBJS)
 
 lix.bin:
 	$(PREFIX)objcopy -O binary lix.elf lix.bin
-
-te_unix:
-	gcc -o te te.c -lcurses -DMAIN -DCURSES
 
 clean:
 	rm -f lix.elf lix.bin lix.asm lix.dasm lix.map *.d fs/*.d fs/fatfs/*.d $(OBJS)

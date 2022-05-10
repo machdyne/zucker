@@ -25,8 +25,6 @@
 #define PS2_CTRL_BUSY 0x02
 #define PS2_CTRL_DR 0x01
 
-#define XFER_PACKET_DATA_LEN 128
-
 #define MEM_VRAM				0x10000000
 #define MEM_VRAM_SIZE		2000
 #define MEM_SRAM				0x20000000
@@ -152,10 +150,11 @@ uint32_t xfer_recv(uint32_t addr_ptr)
 	uint32_t crc_ours;
 	uint32_t crc_theirs;
 
-	char buf_data[1+XFER_PACKET_DATA_LEN];
+	char buf_data[252];
 	char buf_crc[4];
 
 	int cmd;
+	int datasize;
 
 	print("xfer addr 0x");
 	print_hex(addr, 8);
@@ -164,21 +163,22 @@ uint32_t xfer_recv(uint32_t addr_ptr)
 	while (1) {
 
 		while ((cmd = getchar()) == EOF);
-
-		buf_data[0] = cmd;
+		buf_data[0] = (uint8_t)cmd;
 
 		if ((char)cmd == 'L') {
-			getchars(&buf_data[1], XFER_PACKET_DATA_LEN);
+			while ((datasize = getchar()) == EOF);
+			buf_data[1] = (uint8_t)datasize;
+			getchars(&buf_data[2], datasize);
 			getchars(buf_crc, 4);
-			crc_ours = crc32b(buf_data, 1+XFER_PACKET_DATA_LEN);
+			crc_ours = crc32b(buf_data, datasize + 2);
 			crc_theirs = buf_crc[0] | (buf_crc[1] << 8) |
 				(buf_crc[2] << 16) | (buf_crc[3] << 24);
 			if (crc_ours == crc_theirs) {
-				for (int i = 0; i < XFER_PACKET_DATA_LEN; i++) {
-					(*(volatile uint8_t *)(addr + i)) = buf_data[1+i];
+				for (int i = 0; i < datasize; i++) {
+					(*(volatile uint8_t *)(addr + i)) = buf_data[2 + i];
 				}
-				addr += XFER_PACKET_DATA_LEN;
-				bytes += XFER_PACKET_DATA_LEN;
+				addr += datasize;
+				bytes += datasize;
 				putchar('A');
 			} else {
 				putchar('N');

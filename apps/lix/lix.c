@@ -34,12 +34,12 @@ int main(void) {
 		printf("failed.\n");
 
 	if (fs_size("/BOOT.BIN")) {
-		printf("found /BOOT.BIN.");
+		printf("found /BOOT.BIN, loading ... ");
 		int rv = fs_load(0x40100000, "/BOOT.BIN");
 		if (rv) {
 			printf("load failed.\n");
 		} else {
-			printf("running ...\n");
+			printf("done; running ...\n");
 			asm volatile ("li a0, 0x40100000");
 			asm volatile ("jr a0");
 			__builtin_unreachable();

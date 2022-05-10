@@ -11,10 +11,11 @@
 
 #include "lix.h"
 #include "fs.h"
+#include "xfer.h"
+#include "te.h"
 #include "../common/zucker.h"
 
 void hex_dump(uint32_t addr);
-void text_edit(char *filename);
 char *get_arg(char *str, int n);
 void sh_help(void);
 
@@ -27,8 +28,12 @@ void sh_help(void) {
 	printf(" mkdir <dir>       make directory\n");
 	printf(" touch <file>      create an empty file\n");
 	printf(" rm [file/dir]     delete file or directory\n");
+	printf(" xa [addr]         receive to addr via xfer\n");
+	printf(" xf <file>         receive to file via xfer\n");
+	printf(" boot              jump to 0x40100000 \n");
 	printf(" uptime            display uptime in seconds\n");
 	printf(" hd [hexaddr]      hex dump\n");
+	printf(" te <file>         edit text file\n");
 	printf(" uname             print system information\n");
 	printf(" exit              exit to bootloader\n");
 
@@ -118,11 +123,6 @@ void sh(void) {
 				hex_dump(addr);
 		}
 
-		// TEXT EDITOR
-		if (!strncmp(buffer, "te", cmdlen)) {
-			arg = get_arg(buffer, 1);
-		}
-
 		// RUN FILE
 		if (!strncmp(buffer, "run", cmdlen)) {
 			arg = get_arg(buffer, 1);
@@ -135,6 +135,25 @@ void sh(void) {
 				asm volatile ("jr a0");
 				__builtin_unreachable();
 			}
+		}
+
+		// RECEIVE TO ADDR VIA XFER
+		if (!strncmp(buffer, "xa", cmdlen)) {
+			arg = get_arg(buffer, 1);
+			uint32_t addr, bytes;
+			if (!sscanf(arg, "%lx", &addr))
+				addr = 0x40100000;
+			printf("xfer addr 0x%lx; ready to receive (press D to cancel) ...\n",
+				addr);
+			bytes = xfer_recv(addr);
+			printf("received %li bytes to 0x%lx.\n", bytes, addr);
+		}
+
+		// BOOT USER CODE
+		if (!strncmp(buffer, "boot", cmdlen)) {
+			asm volatile ("li a0, 0x40100000");
+			asm volatile ("jr a0");
+			__builtin_unreachable();
 		}
 
 		// FREE DISK SPACE
