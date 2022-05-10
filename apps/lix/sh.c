@@ -12,7 +12,6 @@
 #include "lix.h"
 #include "fs.h"
 #include "xfer.h"
-#include "te.h"
 #include "../common/zucker.h"
 
 void hex_dump(uint32_t addr);
