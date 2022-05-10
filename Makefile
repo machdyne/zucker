@@ -80,4 +80,4 @@ clean_apps:
 clean_firmware:
 	cd firmware && make clean
 
-.PHONY: clean_firmware firmware
+.PHONY: clean_firmware firmware apps
