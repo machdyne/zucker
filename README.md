@@ -48,6 +48,8 @@ The source code for LIX is located in [apps/lix](apps/lix).
 
 If a file named BOOT.BIN is located in the root directory of the SD card it will be loaded into main memory and run automatically at boot time.
 
+You can upload apps to LIX over the UART using the [xfer](https://github.com/machdyne/xfer) utility.
+
 ### Apps
 
 LIX loads apps into memory at 0x40100000.
