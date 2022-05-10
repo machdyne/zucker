@@ -131,20 +131,18 @@ uint32_t fs_size(char *path) {
 	return(fs);
 }
 
-int fs_write_file(void) {
+int fs_write_file(char *path, char *buf, uint32_t len) {
 
 	FIL f;
 	FRESULT res;
 	UINT bw;
 
-	res = f_open(&f, "newfile.txt", FA_WRITE | FA_CREATE_ALWAYS);
+	res = f_open(&f, path, FA_WRITE | FA_CREATE_ALWAYS);
 
 	if (res == FR_OK) {
 
-		f_write(&f, "It works!\r\n", 11, &bw);
+		f_write(&f, buf, len, &bw);
 		res = f_close(&f);
-
-		printf("write succeeded.\n");
 
 		return bw;
 

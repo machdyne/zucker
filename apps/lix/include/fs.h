@@ -1,9 +1,11 @@
+#include <stdint.h>
+
 int fs_mount(void);
 int fs_format(void);
 void fs_list_dir(char *path);
 void fs_mkdir(char *path);
 void fs_unlink(char *path);
-int fs_write_file(void);
+int fs_write_file(char *path, char *buf, uint32_t len);
 int fs_touch(char *path);
 int fs_size(char *path);
 

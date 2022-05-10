@@ -12,6 +12,7 @@
 #include "lix.h"
 #include "fs.h"
 #include "xfer.h"
+#include "te.h"
 #include "../common/zucker.h"
 
 void hex_dump(uint32_t addr);
@@ -32,7 +33,6 @@ void sh_help(void) {
 	printf(" boot              jump to 0x40100000 \n");
 	printf(" uptime            display uptime in seconds\n");
 	printf(" hd [hexaddr]      hex dump\n");
-	printf(" te <file>         edit text file\n");
 	printf(" uname             print system information\n");
 	printf(" exit              exit to bootloader\n");
 
@@ -148,6 +148,28 @@ void sh(void) {
 			printf("received %li bytes to 0x%lx.\n", bytes, addr);
 		}
 
+		// RECEIVE TO FILE VIA XFER
+		if (!strncmp(buffer, "xf", cmdlen)) {
+			arg = get_arg(buffer, 1);
+			uint32_t bytes_received, bytes_written;
+			uint32_t addr = 0x40100000;
+			printf("uploading to file %s.\n", arg);
+			printf("xfer addr 0x%lx; ready to receive (press D to cancel) ...\n",
+				addr);
+			bytes_received = xfer_recv(addr);
+			printf("received %li bytes to 0x%lx.\n", bytes_received, addr);
+			if (bytes_received) {
+				printf("writing to file %s ... ", arg);
+				fflush(stdout);
+				bytes_written = fs_write_file(arg, (void *)0x40100000,
+					bytes_received);
+				if (bytes_written == bytes_received)
+					printf("done.\n");
+				else
+					printf("failed.\n");
+			}
+		}
+
 		// BOOT USER CODE
 		if (!strncmp(buffer, "boot", cmdlen)) {
 			asm volatile ("li a0, 0x40100000");
@@ -177,7 +199,6 @@ void sh(void) {
 				//fs_format();
 			}
 		}
-		if (!strncmp(buffer, "wf", cmdlen)) fs_write_file();
 		if (!strncmp(buffer, "exit", cmdlen)) return;
 
 	}
