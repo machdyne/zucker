@@ -9,6 +9,7 @@
 `define EN_RTC
 `define EN_SDCARD
 `define EN_PS2
+//`define EN_MUSLI_KBD
 `define EN_CLK10KHZ
 `define EN_SPI_FLASH
 `define EN_SRAM
@@ -19,7 +20,7 @@
 `define EN_GPU_TEXT
 
 localparam SYSCLK = 50000000;
-localparam UART_BAUDRATE = 115200;
+localparam UART0_BAUDRATE = 115200;
 
 module sysctl #()
 (
@@ -53,6 +54,12 @@ module sysctl #()
 `ifdef EN_PS2
 	inout PS2_DAT,
 	inout PS2_CLK,
+`endif
+
+`ifdef EN_MUSLI_KBD
+	input MUSLI_SS,
+	input MUSLI_SCK,
+	input MUSLI_MOSI,
 `endif
 
 `ifdef EN_GPU
@@ -232,7 +239,28 @@ module sysctl #()
 		.clk(clk),
 		.resetn(resetn),
 	);
+`endif
 
+`ifdef EN_MUSLI_KBD
+	reg [7:0] ps2_wdata;
+	wire [7:0] ps2_rdata;
+	reg ps2_wstrb;
+	reg ps2_rstrb;
+
+	wire ps2_dr;
+	wire ps2_busy = 0;
+	wire ps2_overflow = 0;
+
+	spislave #() spikbd_i (
+		.clk(clk),
+		.resetn(resetn),
+		.rdata(ps2_rdata),
+		.rstrb(ps2_rstrb),
+		.dr(ps2_dr),
+		.ss(MUSLI_SS),
+		.sclk(MUSLI_SCK),
+		.mosi(MUSLI_MOSI),
+	);
 `endif
 
 	// BLOCK RAM
@@ -456,7 +484,11 @@ module sysctl #()
 		ps2_wstrb <= 0;
 `endif
 
-		transmit <= 0;
+`ifdef EN_MUSLI_KBD
+		ps2_rstrb <= 0;
+`endif
+
+		uart0_transmit <= 0;
 
 `ifdef EN_GPU_GFX
 		if (gpu_refill) begin
@@ -481,19 +513,19 @@ module sysctl #()
 		end
 `endif
 
-		if (received) begin
-			uart_dr <= 1;
+		if (uart0_received) begin
+			uart0_dr <= 1;
 			UART_RTS <= 1;
 		end
 
-		if (!transmit && !is_transmitting && !UART_CTS) begin
-			uart_txbusy <= 0;
+		if (!uart0_transmit && !uart0_is_transmitting && !UART_CTS) begin
+			uart0_txbusy <= 0;
 		end
 
 		if (!resetn) begin
 
-			uart_dr <= 0;
-			uart_txbusy <= 0;
+			uart0_dr <= 0;
+			uart0_txbusy <= 0;
 			UART_RTS <= 0;
 
 `ifdef EN_GPU
@@ -763,14 +795,14 @@ module sysctl #()
 					case (mem_addr[15:0])
 
 						16'h0000: begin
-							if (mem_wstrb && !uart_txbusy) begin
-								tx_byte <= mem_wdata[7:0];
-								uart_txbusy <= 1;
-								transmit <= 1;
+							if (mem_wstrb && !uart0_txbusy) begin
+								uart0_tx_byte <= mem_wdata[7:0];
+								uart0_txbusy <= 1;
+								uart0_transmit <= 1;
 								mem_ready <= 1;
 							end else if (!mem_wstrb) begin
-								mem_rdata[7:0] <= rx_byte;
-								uart_dr <= 0;
+								mem_rdata[7:0] <= uart0_rx_byte;
+								uart0_dr <= 0;
 								UART_RTS <= 0;
 								mem_ready <= 1;
 							end
@@ -778,7 +810,7 @@ module sysctl #()
 
 						16'h0004: begin
 							if (!mem_wstrb) begin
-								mem_rdata[7:0] <= { 6'b0, uart_txbusy, uart_dr };
+								mem_rdata[7:0] <= { 6'b0, uart0_txbusy, uart0_dr };
 							end
 							mem_ready <= 1;
 						end
@@ -814,6 +846,25 @@ module sysctl #()
 								ps2_wdata <= mem_wdata[7:0];
 								ps2_wstrb <= 1;
 							end else begin
+								mem_rdata[7:0] <= ps2_rdata;
+								ps2_rstrb <= 1;
+							end
+							mem_ready <= 1;
+						end
+
+						16'h3004: begin
+							if (!mem_wstrb) begin
+								mem_rdata[7:0] <= {
+									5'b0, ps2_overflow, ps2_busy, ps2_dr
+								};
+							end
+							mem_ready <= 1;
+						end
+`endif
+
+`ifdef EN_MUSLI_KBD
+						16'h3000: begin
+							if (!mem_wstrb) begin
 								mem_rdata[7:0] <= ps2_rdata;
 								ps2_rstrb <= 1;
 							end
@@ -881,22 +932,22 @@ module sysctl #()
 		.irq(cpu_irq)
 	);
 
-	// UART
+	// UART0
 	// ----
 
-	reg transmit;
-	reg [7:0] tx_byte;
-	wire received;
-	wire [7:0] rx_byte;
-	wire is_receiving;
-	wire is_transmitting;
-	wire recv_error;
+	reg uart0_transmit;
+	reg [7:0] uart0_tx_byte;
+	wire uart0_received;
+	wire [7:0] uart0_rx_byte;
+	wire uart0_is_receiving;
+	wire uart0_is_transmitting;
+	wire uart0_recv_error;
 
-	reg uart_dr;
-	reg uart_txbusy;
+	reg uart0_dr;
+	reg uart0_txbusy;
 
 	uart #(
-		.baud_rate(UART_BAUDRATE),
+		.baud_rate(UART0_BAUDRATE),
 		.sys_clk_freq(SYSCLK)
 	)
 	uart0 (
@@ -904,13 +955,13 @@ module sysctl #()
 		.rst(~resetn),
 		.rx(UART_TX),
 		.tx(UART_RX),
-		.transmit(transmit),
-		.tx_byte(tx_byte),
-		.received(received),
-		.rx_byte(rx_byte),
-		.is_receiving(is_receiving),
-		.is_transmitting(is_transmitting),
-		.recv_error(recv_error)
+		.transmit(uart0_transmit),
+		.tx_byte(uart0_tx_byte),
+		.received(uart0_received),
+		.rx_byte(uart0_rx_byte),
+		.is_receiving(uart0_is_receiving),
+		.is_transmitting(uart0_is_transmitting),
+		.recv_error(uart0_recv_error)
 	);
 
 endmodule

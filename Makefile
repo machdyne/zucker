@@ -1,4 +1,4 @@
-RTL_PICO=rtl/sysctl_pico.v rtl/sysclk.v rtl/uart.v rtl/ps2.v \
+RTL_PICO=rtl/sysctl_pico.v rtl/sysclk.v rtl/uart.v rtl/ps2.v rtl/spislave.v \
 	rtl/spiflashro.v rtl/hram.v rtl/qqspi.v rtl/clkdiv.v \
 	rtl/gpu_vga.v rtl/gpu_text.v rtl/gpu_vram.v rtl/gpu_font_rom.v \
 	rtl/cpu/picorv32/picorv32.v
@@ -80,4 +80,4 @@ clean_apps:
 clean_firmware:
 	cd firmware && make clean
 
-.PHONY: clean_firmware firmware apps
+.PHONY: clean_firmware firmware

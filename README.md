@@ -58,6 +58,10 @@ See apps/hello for an example application. You can create your own apps by makin
 
 ## Technical Details
 
+### PMODs
+
+The default configuration assumes that a UART PMOD is connected to PMODB.
+
 ### Memory Map
 
 | Begin | End | Size | Description |
