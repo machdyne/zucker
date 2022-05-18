@@ -30,9 +30,14 @@ make flash_riegel
 
 ## Boot Process
 
+0. USB Bootloader (optional)
 1. Zucker Bootloader (ZBL)
 2. LIX
 3. Apps
+
+### USB Bootloader
+
+See the [Riegel](https://github.com/machdyne/riegel) repo for details on setting up a USB bootloader.
 
 ### Zucker Bootloader (ZBL)
 
