@@ -16,7 +16,8 @@
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE ASSETS OR THE USE OR OTHER
  * DEALINGS IN THE ASSETS. USE AT YOUR OWN RISK.
  *
- * This is an unfinished broken "toy lisp" adapted for LIX OS on the Zucker SOC, * feel free to fix/improve it. It can also be built on Linux:
+ * This is an unfinished broken "toy lisp" adapted for LIX OS on Zucker SOC,
+ * feel free to fix/improve it. It can also be built on Linux:
  *
  * $ gcc -o ll ll.c -lm && ./ll
  * ll> (load ll_stdlib.l)
