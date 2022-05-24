@@ -2,6 +2,20 @@
  * LIX OS
  * Copyright (c) 2021 Lone Dynamics Corporation. All rights reserved.
  *
+ * Redistribution and use in source, binary or physical forms, with or without
+ * modification, is permitted provided that the following condition is met:
+ *
+ * * Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * THIS HARDWARE, SOFTWARE, DATA AND/OR DOCUMENTATION ("THE ASSETS") IS
+ * PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+ * OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE ASSETS OR THE USE OR OTHER
+ * DEALINGS IN THE ASSETS. USE AT YOUR OWN RISK.
+ *
  */
 
 #include <stdio.h>
@@ -16,8 +30,12 @@
 #include "../common/zucker.h"
 
 void hex_dump(uint32_t addr);
+void text_edit(char *filename);
 char *get_arg(char *str, int n);
 void sh_help(void);
+
+void l_init_lix(void);
+void l_ep(char *buf);
 
 void sh_help(void) {
 
@@ -31,9 +49,13 @@ void sh_help(void) {
 	printf(" xa [addr]         receive to addr via xfer\n");
 	printf(" xf <file>         receive to file via xfer\n");
 	printf(" boot              jump to 0x40100000 \n");
+	printf(" bootf             jump to 0x80100000 \n");
 	printf(" uptime            display uptime in seconds\n");
 	printf(" hd [hexaddr]      hex dump\n");
+	printf(" te <file>         edit text file (not working yet)\n");
 	printf(" uname             print system information\n");
+	printf(" (+ 1 2 3)         run lisp code\n");
+	printf(" (dump)            display lisp environment\n");
 	printf(" exit              exit to bootloader\n");
 
 }
@@ -45,6 +67,14 @@ void sh(void) {
 	char *cmdend;
 	char *arg;
 	int rv;
+
+	printf("loading lisp stdlib ... ");
+	fflush(stdout);
+	l_init_lix();
+	printf("done.");
+
+   printf("type help for a list of available commands.");
+   printf("\n");
 
 	while (1) {
 
@@ -60,6 +90,10 @@ void sh(void) {
 			cmdlen = cmdend - buffer;
 
 		printf("\n");
+
+		if (buffer[0] == '(') {
+			l_ep(buffer);
+		}
 
 		if (!strncmp(buffer, "help", cmdlen)) sh_help();
 		if (!strncmp(buffer, "uname", cmdlen))
@@ -122,6 +156,12 @@ void sh(void) {
 				hex_dump(addr);
 		}
 
+		// TEXT EDITOR
+		if (!strncmp(buffer, "te", cmdlen)) {
+			arg = get_arg(buffer, 1);
+			te_edit(arg);
+		}
+
 		// RUN FILE
 		if (!strncmp(buffer, "run", cmdlen)) {
 			arg = get_arg(buffer, 1);
@@ -173,6 +213,12 @@ void sh(void) {
 		// BOOT USER CODE
 		if (!strncmp(buffer, "boot", cmdlen)) {
 			asm volatile ("li a0, 0x40100000");
+			asm volatile ("jr a0");
+			__builtin_unreachable();
+		}
+
+		if (!strncmp(buffer, "bootf", cmdlen)) {
+			asm volatile ("li a0, 0x80100000");
 			asm volatile ("jr a0");
 			__builtin_unreachable();
 		}

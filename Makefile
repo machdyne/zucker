@@ -64,7 +64,7 @@ flash_riegel_soc:
 	ldprog -f output/soc.bin
 
 flash_riegel_lix:
-	ldprog -f apps/lix/lix.bin 25800
+	ldprog -f apps/lix/lix.bin 50000
 
 flash_riegel: flash_riegel_soc flash_riegel_lix
 

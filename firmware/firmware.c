@@ -36,7 +36,7 @@
 #define MEM_FLASH_SIZE		0x2000000	// 32MB
 
 #define LIX_MEM_ADDR			0x40000000
-#define LIX_FLASH_ADDR		0x80025800
+#define LIX_FLASH_ADDR		0x80050000
 #define LIX_SIZE				262144
 
 #include "scancodes.h"

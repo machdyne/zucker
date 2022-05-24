@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "ff.h"
@@ -41,6 +42,33 @@ int fs_load(uint32_t dst, char *path) {
 	f_close(&f);
 
 	return 0;
+
+}
+
+void *fs_mallocfile(char *path) {
+
+	FIL f;
+	FRESULT res;
+	FSIZE_t sz;
+	UINT br;
+
+	void *buf;
+
+	res = f_open(&f, path, FA_READ | FA_OPEN_EXISTING);
+
+	if (res != FR_OK)
+		return NULL;
+
+	sz = f_size(&f);
+
+	buf = malloc(sz);
+	
+	res = f_read(&f, buf, sz, &br);
+	if (res != FR_OK) return NULL;
+
+	f_close(&f);
+
+	return buf;
 
 }
 
