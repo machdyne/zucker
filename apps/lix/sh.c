@@ -40,6 +40,7 @@ void l_ep(char *buf);
 void sh_help(void) {
 
 	printf("commands:\n");
+	printf(" mount             mount a newly inserted SD card\n");
 	printf(" ls [dir]          list directory\n");
 	printf(" run <file>        load and run a file\n");
 	printf(" df                display disk space and usage\n");
@@ -56,6 +57,7 @@ void sh_help(void) {
 	printf(" uname             print system information\n");
 	printf(" (+ 1 2 3)         run lisp code\n");
 	printf(" (dump)            display lisp environment\n");
+	printf(" format            completely erase an SD card\n");
 	printf(" exit              exit to bootloader\n");
 
 }
@@ -71,7 +73,7 @@ void sh(void) {
 	printf("loading lisp stdlib ... ");
 	fflush(stdout);
 	l_init_lix();
-	printf("done.");
+	printf("done.\n");
 
    printf("type help for a list of available commands.");
    printf("\n");
@@ -242,7 +244,7 @@ void sh(void) {
 			printf("\n");
 			if (!strncmp(buffer, "YES", 3)) {
 				printf("formatting (this may take several minutes) ...\n");
-				//fs_format();
+				fs_format();
 			}
 		}
 		if (!strncmp(buffer, "exit", cmdlen)) return;

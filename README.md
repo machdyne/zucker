@@ -51,15 +51,48 @@ LIX is a minimal OS and second stage bootloader. LIX is capable of loading and b
 
 The source code for LIX is located in [apps/lix](apps/lix).
 
-If a file named BOOT.BIN is located in the root directory of the SD card it will be loaded into main memory and run automatically at boot time.
+#### Commands
 
-You can upload apps to LIX over the UART using the [xfer](https://github.com/machdyne/xfer) utility.
+Type `help` to see a list of commands.
 
-### Apps
+#### User Apps
 
-LIX loads apps into memory at 0x40100000.
+LIX load user apps into memory at 0x40100000.
 
 See apps/hello for an example application. You can create your own apps by making a copy of the apps/hello directory.
+
+After compiling your app you can copy it to an SD card and run it from LIX:
+
+```
+lix> run myapps/hello.bin
+```
+
+You can also upload apps to LIX over the UART using the [xfer](https://github.com/machdyne/xfer) utility.
+
+If a file named BOOT.BIN is located in the root directory of the SD card it will be loaded into main memory and run automatically at boot time.
+
+#### Lisp
+
+LIX also includes a simple Lisp interpreter.
+
+Some usage examples:
+
+```
+lix> (+ 1 2 3 4 5)
+[num:15.000000]
+lix> (map (lambda (x) (* 2 x)) (list 1 2 3 4))
+[list: [num:2.000000] [num:4.000000] [num:6.000000] [num:8.000000]
+```
+
+Display the environment:
+```
+lix> (dump)
+```
+
+Load a LISP program from the SD card:
+```
+lix> (load myfiles/lisp/hello.l)
+```
 
 ## Technical Details
 
