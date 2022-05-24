@@ -57,7 +57,7 @@ Type `help` to see a list of commands.
 
 #### User Apps
 
-LIX load user apps into memory at 0x40100000.
+LIX loads user apps into memory at 0x40100000.
 
 See apps/hello for an example application. You can create your own apps by making a copy of the apps/hello directory.
 
