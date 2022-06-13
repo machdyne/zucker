@@ -8,7 +8,7 @@ Zucker was created as a demo platform and a starting point for developing gatewa
 
 ## Supported Boards
 
-- [Riegel](https://machedyne.com/product/riegel-computer)
+- [Riegel](https://machdyne.com/product/riegel-computer)
 - [Kröte](https://machdyne.com/product/krote-fpga-board/)
 - [IcoBoard](http://icoboard.org/)
 
@@ -81,7 +81,7 @@ Some usage examples:
 lix> (+ 1 2 3 4 5)
 [num:15.000000]
 lix> (map (lambda (x) (* 2 x)) (list 1 2 3 4))
-[list: [num:2.000000] [num:4.000000] [num:6.000000] [num:8.000000]
+[list: [num:2.000000] [num:4.000000] [num:6.000000] [num:8.000000] ]
 ```
 
 Display the environment:
