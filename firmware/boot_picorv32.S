@@ -38,6 +38,8 @@ start:
 	addi x31, zero, 0
 
 	/* set stack pointer to end of block ram */
+//	lui sp, %hi(5120)
+//	addi sp, sp, %lo(5120)
 	lui sp, %hi(6144)
 	addi sp, sp, %lo(6144)
 
@@ -45,8 +47,8 @@ start:
 	jal ra, main
 
 	/* set stack pointer to end of HRAM */
-	lui sp, %hi(0x44000000)
-	addi sp, sp, %lo(0x44000000)
+	lui sp, %hi(0x42000000)
+	addi sp, sp, %lo(0x42000000)
 
 	/* jump to LIX */
 	li a0, 0x40000000

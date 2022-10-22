@@ -120,6 +120,7 @@ l_value *v_atom_while;
 // PROTOTYPES
 
 void l_init(void);
+void l_init_lix(bool stdlib);
 
 void l_log(l_log_level level, const char *fmt, ...);
 void l_dump(l_value *x);
@@ -1626,13 +1627,15 @@ void l_init(void) {
 }
 
 #ifdef LIX
-void l_init_lix(void) {
+void l_init_lix(bool stdlib) {
 
 	l_init();
 	l_env_root = l_env_std();
-	l_value *stmt = l_read((const char *)ll_stdlib_l);
-	PUSH(l_gc_stack, stmt);
-	l_eval(stmt, l_env_root);
+	if (stdlib) {
+		l_value *stmt = l_read((const char *)ll_stdlib_l);
+		PUSH(l_gc_stack, stmt);
+		l_eval(stmt, l_env_root);
+	}
 
 }
 #endif

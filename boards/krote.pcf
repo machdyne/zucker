@@ -1,6 +1,3 @@
-# Krote V0
-# --------
-
 set_io CLK_100 B6
 
 set_io LED_A	E2
@@ -32,10 +29,10 @@ set_io SPI_MISO	F10
 set_io SPI_MOSI	G10
 
 # UART (PMOD E)
-set_io UART_CTS	L8
-set_io UART_RX		K5
-set_io UART_TX		K3
-set_io UART_RTS	L5
+set_io UART0_CTS	L8
+set_io UART0_RX	K5
+set_io UART0_TX	K3
+set_io UART0_RTS	L5
 
 # --
 

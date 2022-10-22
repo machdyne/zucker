@@ -1,10 +1,10 @@
 /*
- * Zucker SOC
+ * Zucker SOC GPU
  * Copyright (c) 2021 Lone Dynamics Corporation. All rights reserved.
  *
  */
 
-module gpu_vga #(
+module gpu_video #(
 
 	parameter [9:0] h_disp = 640,
 	parameter [9:0] h_front_porch = 16,
@@ -15,8 +15,14 @@ module gpu_vga #(
 	parameter [9:0] v_disp = 480,
 	parameter [9:0] v_front_porch = 10,
 	parameter [9:0] v_pulse_width = 2,
-	parameter [9:0] v_back_porch = 29,
+
+`ifdef VCLK25
+	parameter [9:0] v_back_porch = 29,	// 25mhz
 	parameter [9:0] v_frame = 521
+`else
+	parameter [9:0] v_back_porch = 33,	// 25.2mhz
+	parameter [9:0] v_frame = 525
+`endif
 
 ) (
 
@@ -28,6 +34,7 @@ module gpu_vga #(
 
 	input clk,
 	input vclk,
+	input bclk,
 	input resetn,
 
 	output red,
@@ -36,19 +43,77 @@ module gpu_vga #(
 	output hsync,
 	output vsync,
 
+	output [3:0] dvi_p,
+	output [3:0] dvi_n,
+
+	output [3:0] dac,
+
 	output [9:0] hc,
 	output [9:0] vc,
 	output reg [9:0] x,
 	output reg [9:0] y,
-	output is_visible
+	output is_visible,
 
 );
 
-	reg [9:0] hc;
-	reg [9:0] vc;
-
 	reg refill_vclk;
 	reg refill_vclk_last;
+
+`ifdef EN_GPU_FB
+	assign red = (is_visible && (hline_r[x] || pixel)) ? 1'b1 : 1'b0;
+	assign green = (is_visible && (hline_g[x] || pixel)) ? 1'b1 : 1'b0;
+	assign blue = (is_visible && (hline_b[x] || pixel)) ? 1'b1 : 1'b0;
+`else
+	assign red = (is_visible && pixel) ? 1'b1 : 1'b0;
+	assign green = (is_visible && pixel) ? 1'b1 : 1'b0;
+	assign blue = (is_visible && pixel) ? 1'b1 : 1'b0;
+`endif
+
+`ifdef EN_VIDEO_DDMI
+
+	wire [1:0] out_tmds_red;
+	wire [1:0] out_tmds_green;
+	wire [1:0] out_tmds_blue;
+	wire [1:0] out_tmds_clk;
+
+	SB_LVCMOS SB_LVCMOS_RED (.DP(dvi_p[2]), .DN(dvi_n[2]), .clk_x5(bclk),
+		.tmds_signal(out_tmds_red));
+	SB_LVCMOS SB_LVCMOS_GREEN (.DP(dvi_p[1]), .DN(dvi_n[1]), .clk_x5(bclk),
+		.tmds_signal(out_tmds_green));
+	SB_LVCMOS SB_LVCMOS_BLUE (.DP(dvi_p[0]), .DN(dvi_n[0]), .clk_x5(bclk),
+		.tmds_signal(out_tmds_blue));
+	SB_LVCMOS SB_LVCMOS_CLK (.DP(dvi_p[3]), .DN(dvi_n[3]), .clk_x5(bclk),
+		.tmds_signal(out_tmds_clk));
+
+	gpu_ddmi #(
+		.DDR_ENABLED(1)
+	) gpu_ddmi_i (
+		.pclk(vclk),
+		.tmds_clk(bclk),
+		.in_vga_red({ red, 7'b0 }),
+		.in_vga_green({ green, 7'b0 }),
+		.in_vga_blue({ blue, 7'b0 }),
+		.in_vga_blank(!is_visible),
+		.in_vga_vsync(vsync),
+		.in_vga_hsync(hsync),
+		.out_tmds_red(out_tmds_red),
+		.out_tmds_green(out_tmds_green),
+		.out_tmds_blue(out_tmds_blue),
+		.out_tmds_clk(out_tmds_clk)
+	);
+
+`endif
+
+`ifdef EN_VIDEO_COMPOSITE
+
+	// TODO
+
+`endif
+
+	// video timing
+
+	reg [9:0] hc;
+	reg [9:0] vc;
 
 	parameter [9:0] h_disp_start = h_front_porch + h_pulse_width + h_back_porch;
 	parameter [9:0] h_disp_stop = h_disp_start + h_disp;
@@ -63,16 +128,6 @@ module gpu_vga #(
 		(hc >= h_front_porch + h_pulse_width);
 	assign vsync = (vc < v_front_porch) ||
 		(vc >= v_front_porch + v_pulse_width);
-
-`ifdef EN_GPU_GFX
-	assign red = (is_visible && (hline_r[x] || pixel)) ? 1'b1 : 1'b0;
-	assign green = (is_visible && (hline_g[x] || pixel)) ? 1'b1 : 1'b0;
-	assign blue = (is_visible && (hline_b[x] || pixel)) ? 1'b1 : 1'b0;
-`else
-	assign red = (is_visible && pixel) ? 1'b1 : 1'b0;
-	assign green = (is_visible && pixel) ? 1'b1 : 1'b0;
-	assign blue = (is_visible && pixel) ? 1'b1 : 1'b0;
-`endif
 
 	always @(posedge clk) begin
 		refill <= 0;

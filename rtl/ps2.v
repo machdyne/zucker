@@ -160,11 +160,11 @@ module ps2 (
 				if (ps2_bits == 10) begin
 					state <= ST_IDLE;
 					if (!ps2_buf_recv[0] && ps2_dat_i && ^ps2_buf_recv[9:1]) begin
-					if ((fifo_wptr + 1) != fifo_rptr) begin
+						if ((fifo_wptr + 1) != fifo_rptr) begin
 							fifo[fifo_wptr] <= ps2_buf_recv[8:1];
 							fifo_wptr <= fifo_wptr + 1;
 						end else begin
-						ps2_overflow <= 1;
+							ps2_overflow <= 1;
 						end
 					end
 				end else begin

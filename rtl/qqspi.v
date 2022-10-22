@@ -21,7 +21,7 @@ module qqspi #(
 	input resetn,
 
 	output reg ss,
-	output reg sclk,
+	output sck,
 	inout mosi,
 	inout miso,
 	inout sio2,
@@ -35,7 +35,9 @@ module qqspi #(
 	reg [3:0] sio_do;
 	wire [3:0] sio_di;
 
-`ifdef TESTBENCH
+	reg sck_do;
+
+//`ifdef TESTBENCH
 
 	assign mosi = sio_oe[0] ? sio_do[0] : 1'bz;
 	assign miso = sio_oe[1] ? sio_do[1] : 1'bz;
@@ -43,7 +45,9 @@ module qqspi #(
 	assign sio3 = sio_oe[3] ? sio_do[3] : 1'bz;
 
 	assign sio_di = {sio3, sio2, miso, mosi};
+	assign sck = valid ? sck_do : 1'bz;
 
+/*
 `else
 
 	SB_IO #(
@@ -57,7 +61,7 @@ module qqspi #(
 	);
 
 `endif
-
+*/
 	localparam [2:0]
 		STATE_IDLE			= 4'd0,
 		STATE_INIT			= 4'd1,
@@ -78,7 +82,7 @@ module qqspi #(
 
 			cs <= 2'b00;
 			ss <= 1;
-			sclk <= 0;
+			sck_do <= 0;
 			sio_oe = 4'b1111;
 			sio_do = 4'b0000;
 
@@ -105,10 +109,10 @@ module qqspi #(
 				sio_do[0] <= buffer[31];
 			end
 
-			if (sclk) begin
-				sclk <= 0;
+			if (sck_do) begin
+				sck_do <= 0;
 			end else begin
-				sclk <= 1;
+				sck_do <= 1;
 				if (xfer_quad) begin
 					buffer <= {buffer, sio_di[3:0]};
 					xfer_bits <= xfer_bits - 4;
@@ -121,6 +125,7 @@ module qqspi #(
 		end else case (state)
 
 			STATE_IDLE: begin
+				sio_oe = 4'b0000;
 				ss <= 1;
 			end
 

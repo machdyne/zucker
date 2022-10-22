@@ -72,7 +72,7 @@ int getch(void) {
 			c = kbdtoascii();
 			if (c) return c; else return EOF;
 		} else {
-			return reg_uart_data;
+			return (char)reg_uart_data;
 		}
 	}
 }

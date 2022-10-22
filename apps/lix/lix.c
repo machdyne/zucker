@@ -47,6 +47,7 @@ int main(void) {
 	else
 		printf("failed.\n");
 
+
 	if (fs_size("/BOOT.BIN")) {
 		printf("found /BOOT.BIN, loading ... ");
 		int rv = fs_load(0x40100000, "/BOOT.BIN");

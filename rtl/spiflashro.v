@@ -15,9 +15,9 @@ module spiflashro #()
 	input clk,
 	input resetn,
    output reg ss,
-   output reg sck,
-	output reg mosi,
-	input miso,
+   output sck,
+	output mosi,
+	inout miso,
 	output reg [3:0] state
 );
 
@@ -40,12 +40,18 @@ module spiflashro #()
 	reg [31:0] buffer;
 	reg [5:0] xfer_bits;
 
+	reg mosi_do;
+	reg sck_do;
+
+	assign mosi = valid ? mosi_do : 1'bz;
+	assign sck = valid ? sck_do : 1'bz;
+
 	always @(posedge clk) begin
 
 		if (!resetn) begin
 
 			ss <= 1;
-			sck <= 0;
+			sck_do <= 0;
 
 			xfer_bits <= 0;
 			ready <= 0;
@@ -63,12 +69,12 @@ module spiflashro #()
 
 		end else if (xfer_bits) begin
 
-			mosi <= buffer[31];
+			mosi_do <= buffer[31];
 
-			if (sck) begin
-				sck <= 0;
+			if (sck_do) begin
+				sck_do <= 0;
 			end else begin
-				sck <= 1;
+				sck_do <= 1;
 				buffer <= { buffer, miso };
 				xfer_bits <= xfer_bits - 1;
 			end
@@ -80,7 +86,7 @@ module spiflashro #()
 			end
 
 			STATE_INIT: begin
-				sck <= 0;
+				sck_do <= 0;
 				state <= STATE_EPD0;
 			end
 

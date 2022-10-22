@@ -5,6 +5,8 @@
 
 #define reg_uart_data (*(volatile uint8_t*)0xf0000000)
 #define reg_uart_ctrl (*(volatile uint8_t*)0xf0000004)
+#define reg_uart1_data (*(volatile uint8_t*)0xf0004000)
+#define reg_uart1_ctrl (*(volatile uint8_t*)0xf0004004)
 #define reg_leds (*(volatile uint8_t*)0xf0001000)
 #define reg_rtc (*(volatile uint32_t*)0xf0001100)
 #define reg_sdcard (*(volatile uint8_t*)0xf0002000)

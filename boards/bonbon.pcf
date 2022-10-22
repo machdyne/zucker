@@ -1,0 +1,65 @@
+# Bonbon V1
+# ---------
+
+# CLOCK
+set_io CLK_RP	20		# RP_GPIO24
+
+# RGB LED
+set_io LED_R	40
+set_io LED_G	41
+set_io LED_B	39
+
+# PMOD_A
+set_io PMOD_A1		46
+set_io PMOD_A2		44
+set_io PMOD_A3		42
+set_io PMOD_A4		37
+set_io PMOD_A7		45
+set_io PMOD_A8		43
+set_io PMOD_A9		38
+set_io PMOD_A10	36
+
+# UART ON PMOD_A
+set_io UART0_RTS  46
+set_io UART0_RX   44
+set_io UART0_TX   42
+set_io UART0_CTS  37
+
+# USB
+set_io USB_DP		31
+set_io USB_DP_PU	34
+set_io USB_DN		32
+
+# DDMI
+set_io DDMI_D0_N	21
+set_io DDMI_D1_N	25
+set_io DDMI_D2_N	27
+set_io DDMI_CK_N	18
+set_io DDMI_D0_P	23
+set_io DDMI_D1_P	26
+set_io DDMI_D2_P	28
+set_io DDMI_CK_P	19
+
+# MICROSD
+set_io SD_SS		35		# RP_GPIO21
+set_io SD_MISO		11		# RP_GPIO20
+set_io SD_MOSI		13		# RP_GPIO23
+set_io SD_SCK		12		# RP_GPIO22
+
+# RP2040 GPIO
+set_io RP_TX		10		# RP_GPIO16
+set_io RP_RX		7		# CDONE / RP_GPIO17
+
+# SPI BUS
+set_io SPI_SS_RAM0	3	# RP_GPIO4
+set_io SPI_SS_RAM1	2
+set_io SPI_SS_RAM2	4
+set_io SPI_SS_RAM3	6
+set_io SPI_SS_RP		9	# RP_GPIO25
+set_io SPI_SS_FLASH	16 # CSPI_SS
+set_io SPI_SCK			15 # CSPI_SCK / RP_GPIO26
+set_io SPI_MISO		17	# CSPI_SI / RP_GPIO27
+set_io SPI_MOSI		14	# CSPI_SO / RP_GPIO28
+set_io SPI_IO2			47
+set_io SPI_IO3			48
+

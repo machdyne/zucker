@@ -6,11 +6,13 @@ Zucker is an experimental System-on-a-Chip (SOC) designed for Lone Dynamics FPGA
 
 Zucker was created as a demo platform and a starting point for developing gateware and apps on the [Riegel](https://machdyne.com/product/riegel-computer) FPGA computer. The goal of Zucker is to allow Riegel to be used as a stand-alone [timeless](https://machdyne.com/2022/01/12/timeless-computing/) personal computer system when attached to a keyboard and a monitor.
 
+Zucker also serves as a demo SOC for the [Keks](https://machdyne.com/product/keks-game-console) game console and [Bonbon](https://machdyne.com/product/bonbon-computer) computer.
+
 ## Supported Boards
 
 - [Riegel](https://machdyne.com/product/riegel-computer)
-- [Kröte](https://machdyne.com/product/krote-fpga-board/)
-- [IcoBoard](http://icoboard.org/)
+- [Bonbon](https://machdyne.com/product/bonbon-computer)
+- [Keks](https://machdyne.com/product/keks-game-console)
 
 ## Getting Started
 
@@ -109,6 +111,8 @@ The default configuration assumes that a UART PMOD is connected to PMODB.
 | ``20000000`` | ``2007ffff`` | 512KB | SRAM (video graphic memory) |
 | ``40000000`` | ``43ffffff`` | 32MB-64MB | HRAM or QQSPI (main memory) |
 | ``80000000`` | ``8fffffff`` | - | MMOD (read-only flash memory) |
+| ``a0000000`` | ``afffffff`` | 1 | Cartridge memory |
+| ``e0000000`` | ``efffffff`` | 1 | RPMEM |
 | ``f0000000`` | ``f0000000`` | 1 | UART data register |
 | ``f0000004`` | ``f0000004`` | 1 | UART control register |
 | ``f0001000`` | ``f0001000`` | 1 | LED control register |
@@ -124,8 +128,6 @@ There is a 640x480 framebuffer at the beginning of the SRAM.
 Each byte in the framebuffer contains two pixels: XRGBXRGB. X is an unused bit.
 
 This uses 153600 bytes of the SRAM. The remaining SRAM is unused and available.
-
-Note: Graphics mode is currently disabled by default.
 
 ### Video Text
 

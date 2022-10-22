@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include "lix.h"
@@ -34,7 +35,9 @@ void text_edit(char *filename);
 char *get_arg(char *str, int n);
 void sh_help(void);
 
-void l_init_lix(void);
+void terminal(void);
+
+void l_init_lix(bool stdlib);
 void l_ep(char *buf);
 
 void sh_help(void) {
@@ -57,6 +60,7 @@ void sh_help(void) {
 	printf(" uname             print system information\n");
 	printf(" (+ 1 2 3)         run lisp code\n");
 	printf(" (dump)            display lisp environment\n");
+	printf(" term              terminal for uart1 (kabellos)\n");
 	printf(" format            completely erase an SD card\n");
 	printf(" exit              exit to bootloader\n");
 
@@ -72,7 +76,7 @@ void sh(void) {
 
 	printf("loading lisp stdlib ... ");
 	fflush(stdout);
-	l_init_lix();
+	l_init_lix(true);
 	printf("done.\n");
 
    printf("type help for a list of available commands.");
@@ -102,6 +106,11 @@ void sh(void) {
 			printf("lix %s\n", LIX_VERSION);
 		if (!strncmp(buffer, "uptime", cmdlen))
 			printf("uptime: %li\n", reg_rtc);
+
+		// TERMINAL
+		if (!strncmp(buffer, "term", cmdlen)) {
+			terminal();
+		}
 
 		// LIST DIRECTORY
 		if (!strncmp(buffer, "ls", cmdlen)) {
@@ -237,6 +246,7 @@ void sh(void) {
 			fs_mount();
 		}
 
+		// FORMAT DRIVE
 		if (!strncmp(buffer, "format", cmdlen)) {
 			printf("type YES to format the SD card: ");
 			fflush(stdout);

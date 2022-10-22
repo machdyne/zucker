@@ -15,8 +15,11 @@
 #define reg_uart_ctrl (*(volatile uint8_t*)0xf0000004)
 #define reg_leds (*(volatile uint8_t*)0xf0001000)
 #define reg_rtc (*(volatile uint32_t*)0xf0001100)
+#define reg_sd (*(volatile uint8_t*)0xf0002000)
 #define reg_ps2_data (*(volatile uint8_t*)0xf0003000)
 #define reg_ps2_ctrl (*(volatile uint8_t*)0xf0003004)
+#define reg_gamepad_l (*(volatile uint32_t*)0xf0005000)
+#define reg_gamepad_r (*(volatile uint32_t*)0xf0005004)
 
 #define UART_CTRL_TXBUSY 0x02
 #define UART_CTRL_DR 0x01
@@ -25,15 +28,27 @@
 #define PS2_CTRL_BUSY 0x02
 #define PS2_CTRL_DR 0x01
 
+#define SD_MISO 0x01
+#define SD_MOSI 0x02
+#define SD_SCK 0x04
+#define SD_SS 0x08
+
 #define MEM_VRAM				0x10000000
 #define MEM_VRAM_SIZE		2000
 #define MEM_SRAM				0x20000000
+//#define MEM_SRAM_SIZE		0x20000		// 128KB
 #define MEM_SRAM_SIZE		0x80000		// 512KB
+//#define MEM_SRAM_SIZE		0x100000		// 1MB
 #define MEM_HRAM				0x40000000
-//#define MEM_HRAM_SIZE		0x2000000	// 32MB
-#define MEM_HRAM_SIZE		0x4000000	// 64MB
+//#define MEM_HRAM_SIZE		0x800000		// 8MB
+#define MEM_HRAM_SIZE		0x2000000	// 32MB
+//#define MEM_HRAM_SIZE		0x4000000	// 64MB
 #define MEM_FLASH				0x80000000
 #define MEM_FLASH_SIZE		0x2000000	// 32MB
+#define MEM_CART				0xa0000000
+#define MEM_CART_SIZE		0x2000000	// 32MB
+#define MEM_RP					0xe0000000
+#define MEM_RP_SIZE			0x100000
 
 #define LIX_MEM_ADDR			0x40000000
 #define LIX_FLASH_ADDR		0x80050000
@@ -53,6 +68,10 @@ uint32_t xfer_recv(uint32_t addr);
 uint32_t crc32b(char *data, uint32_t len);
 void putchar_vga(const char c);
 char scantoascii(uint8_t scancode);
+
+void sd_init(void);
+void sd_spi_xfer(uint8_t b);
+void sd_delay(void);
 
 void print_hex(uint32_t v, int digits);
 void memtest(uint32_t addr_ptr, uint32_t mem_total);
@@ -212,6 +231,72 @@ uint32_t crc32b(char *data, uint32_t len) {
 	return ~crc;
 }
 
+/*
+// put any SD card into SPI mode or it will cause problems on the SPI bus
+void sd_init(void) {
+
+	reg_sd = SD_SS | SD_MOSI;
+
+	// dummy clocks
+	for (int i = 0; i < 10; i++) {
+		sd_spi_xfer(0xff);
+	}
+
+	reg_sd = 0x00;	// SS low
+
+	sd_delay();
+	sd_spi_xfer(0x40);
+	sd_spi_xfer(0x00);
+	sd_spi_xfer(0x00);
+	sd_spi_xfer(0x00);
+	sd_spi_xfer(0x00);
+	sd_spi_xfer(0x95);
+
+	reg_sd = SD_MOSI;
+	print("got: ");
+
+	for (int z = 0; z < 10; z++) {
+
+		for (int i = 0; i < 50; i++) {
+
+			if ((reg_sd & SD_MISO) == SD_MISO) print("1"); else print("0");
+
+			reg_sd |= SD_SCK;
+			sd_delay();
+			reg_sd &= ~SD_SCK;
+			sd_delay();
+
+		}
+
+		print("\n");
+
+		sd_delay();
+		sd_delay();
+		sd_delay();
+
+	}
+
+
+}
+
+void sd_spi_xfer(uint8_t b) {
+	for (int i = 7; i >= 0; i--) {
+		if ((b >> i) & 0x01) reg_sd = SD_MOSI; else reg_sd = 0x00;
+		if ((b >> i) & 0x01) print("1"); else print("0");
+		reg_sd |= SD_SCK;
+		sd_delay();
+		reg_sd &= ~SD_SCK;
+		sd_delay();
+	}
+	print("\n");
+}
+
+void sd_delay(void) {
+	uint32_t x, y;
+	for (x = 0; x < 100000; x++) y += x * 2;
+}
+*/
+
 void cmd_echo() {
 	int c;
 
@@ -227,6 +312,7 @@ void cmd_echo() {
 void cmd_info() {
 
 	uint8_t tmp;
+	uint32_t tmp32;
 
 	print("leds: ");
 	tmp = reg_leds;
@@ -239,8 +325,18 @@ void cmd_info() {
 	print("\n");
 
 	print("uptime: ");
-	tmp = reg_rtc;
-	print_hex(tmp, 8);
+	tmp32 = reg_rtc;
+	print_hex(tmp32, 8);
+	print("\n");
+
+	print("gamepad_l: ");
+	tmp32 = reg_gamepad_l;
+	print_hex(tmp32, 8);
+	print("\n");
+
+	print("gamepad_r: ");
+	tmp32 = reg_gamepad_r;
+	print_hex(tmp32, 8);
 	print("\n");
 
 }
@@ -337,8 +433,7 @@ void cmd_memcpy()
 
 void cmd_help() {
 
-	print("\n");
-	print(" [0] toggle address\n");
+	print("\n [0] toggle address\n");
 	print(" [D] dump memory as bytes\n");
 	print(" [W] dump memory as words\n");
 	print(" [I] system info\n");
@@ -350,8 +445,7 @@ void cmd_help() {
 	print(" [B] boot to 0x40000000\n");
 	print(" [L] boot LIX\n");
 	print(" [E] echo mode (exit with 0)\n");
-	print(" [H] help\n");
-	print("\n");
+	print(" [H] help\n\n");
 
 }
 
@@ -367,6 +461,12 @@ void cmd_toggle_addr_ptr(void) {
 		addr_ptr = MEM_FLASH;
 		mem_total = MEM_FLASH_SIZE;
 	} else if (addr_ptr == MEM_FLASH) {
+		addr_ptr = MEM_CART;
+		mem_total = MEM_CART_SIZE;
+	} else if (addr_ptr == MEM_CART) {
+		addr_ptr = MEM_RP;
+		mem_total = MEM_RP_SIZE;
+	} else if (addr_ptr == MEM_RP) {
 		addr_ptr = MEM_HRAM;
 		mem_total = MEM_HRAM_SIZE;
 	}
@@ -392,6 +492,15 @@ void cmd_load_lix() {
 	print("done.\n");
 }
 
+void test_rpmem() {
+   volatile uint32_t *rpmem_addr = (uint32_t *)0xe0000000;
+	(*(volatile uint32_t *)(rpmem_addr)) = 0xaabbccdd;
+	uint32_t v = *(volatile uint32_t *)rpmem_addr;
+	print("RPMEM VAL: ");
+	print_hex(v, 8);
+	print("\n");
+}
+
 void main() {
 
 	int cmd;
@@ -399,14 +508,14 @@ void main() {
 
 	reg_leds = 0x01;
 
-	if (reg_rtc < 3) automated = 1;
+//	if (reg_rtc < 3) automated = 1;
 
 	print("ZBL\n");
 
 	// clear SRAM
 	addr_ptr = MEM_SRAM;
 	mem_total = MEM_SRAM_SIZE;
-	cmd_memzero();
+//	cmd_memzero();
 
 	addr_ptr = MEM_HRAM;
 	mem_total = MEM_HRAM_SIZE;
@@ -419,6 +528,10 @@ void main() {
 	print(" / /_   |  -'   \\  _| ' /\n");
  	print("/___/___|___|__\\_\\__|_:_\\\n");
 #endif
+
+//	print("init sdcard to spi mode ... ");
+//	sd_init();
+	print("done\n");
 
 	cmd_help();
 
@@ -489,6 +602,11 @@ void main() {
 			case 'B':
 				print("booting ... ");
 				return;
+				break;
+			case 'r':
+			case 'R':
+				print("rpmem test ...\n");
+				test_rpmem();
 				break;
 			case 'l':
 			case 'L':

@@ -3,6 +3,7 @@ CFLAGS=
 ARCH=rv32i
 ABI=ilp32
 
+#BRAM_WORDS=1280
 BRAM_WORDS=1536
 
 BOOT=boot_picorv32.S

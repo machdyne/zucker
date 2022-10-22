@@ -1,5 +1,3 @@
-// subset of ps/2 scancodes
-
 uint8_t ps2_scancodes[] = {
 
 	// scancode		key
