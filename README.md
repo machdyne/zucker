@@ -4,13 +4,12 @@
 
 Zucker is an experimental System-on-a-Chip (SOC) designed for Lone Dynamics FPGA computers that provides a RISC-V CPU ([PicoRV32](https://github.com/YosysHQ/picorv32)), a simple GPU, memory controllers, a keyboard controller and a UART. This repo also contains firmware, a minimal OS and example applications.
 
-Zucker was created as a demo platform and a starting point for developing gateware and apps on the [Riegel](https://machdyne.com/product/riegel-computer) FPGA computer. The goal of Zucker is to allow Riegel to be used as a stand-alone [timeless](https://machdyne.com/2022/01/12/timeless-computing/) personal computer system when attached to a keyboard and a monitor.
-
-Zucker also serves as a demo SOC for the [Keks](https://machdyne.com/product/keks-game-console) game console and [Bonbon](https://machdyne.com/product/bonbon-computer) computer.
+Zucker was created as a demo platform and a starting point for developing gateware and apps on the [Riegel](https://machdyne.com/product/riegel-computer) FPGA computer. The goal of Zucker is to allow FPGA computers to be used as a stand-alone [timeless](https://machdyne.com/2022/01/12/timeless-computing/) personal computer system when attached to a keyboard and a monitor.
 
 ## Supported Boards
 
 - [Riegel](https://machdyne.com/product/riegel-computer)
+- [Eis](https://machdyne.com/product/eis-computer)
 - [Bonbon](https://machdyne.com/product/bonbon-computer)
 - [Keks](https://machdyne.com/product/keks-game-console)
 
