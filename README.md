@@ -38,7 +38,7 @@ make flash_riegel
 
 ### USB Bootloader
 
-See the [Riegel](https://github.com/machdyne/riegel) repo for details on setting up a USB bootloader.
+See the [Riegel](https://github.com/machdyne/riegel) repo for details on setting up a USB bootloader. Eis, Keks and Bonbon are programmable over USB with the onboard RP2040, and don't need an FPGA-based USB bootloader.
 
 ### Zucker Bootloader (ZBL)
 
@@ -110,8 +110,8 @@ The default configuration assumes that a UART PMOD is connected to PMODB.
 | ``20000000`` | ``2007ffff`` | 512KB | SRAM (video graphic memory) |
 | ``40000000`` | ``43ffffff`` | 32MB-64MB | HRAM or QQSPI (main memory) |
 | ``80000000`` | ``8fffffff`` | - | MMOD (read-only flash memory) |
-| ``a0000000`` | ``afffffff`` | 1 | Cartridge memory |
-| ``e0000000`` | ``efffffff`` | 1 | RPMEM |
+| ``a0000000`` | ``afffffff`` | - | Cartridge memory (Keks PMODA) |
+| ``e0000000`` | ``efffffff`` | - | RPMEM |
 | ``f0000000`` | ``f0000000`` | 1 | UART data register |
 | ``f0000004`` | ``f0000004`` | 1 | UART control register |
 | ``f0001000`` | ``f0001000`` | 1 | LED control register |
