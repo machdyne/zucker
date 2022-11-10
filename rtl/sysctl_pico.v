@@ -10,6 +10,8 @@
 
 `ifdef SYSCLK50
 localparam SYSCLK = 50_000_000;
+`elsif SYSCLK36
+localparam SYSCLK = 36_000_000;
 `elsif SYSCLK25
 localparam SYSCLK = 25_000_000;
 `elsif SYSCLK20
@@ -76,7 +78,6 @@ module sysctl #()
 `endif
 
 `ifdef EN_MUSLI_KBD
-	input MUSLI_SS,
 	input MUSLI_SCK,
 	input MUSLI_MOSI,
 `endif
@@ -191,6 +192,12 @@ module sysctl #()
 `endif
 `endif
 
+`ifdef EN_RPDEBUG
+	output PMOD_A8,
+	output PMOD_A10,
+	input RP_TX,
+`endif
+
 `ifdef KEKS
 	input BTN,
 `endif
@@ -202,6 +209,11 @@ module sysctl #()
 
 );
 
+`ifdef EN_RPDEBUG
+	assign PMOD_A8 = RP_TX;
+	assign PMOD_A10 = 0; // CTS
+`endif
+
 	// CLOCKS
 	// ------
 
@@ -210,6 +222,7 @@ module sysctl #()
 	wire clk25mhz;
 	wire clk50mhz;
 	wire clk125mhz;
+	wire clk126mhz;
 
 	reg clk10khz;
 
@@ -226,11 +239,50 @@ module sysctl #()
 
 	wire pll_locked;
 
+
+
 	reg [4:0] ctr25mhz = 5'b00011;
+`ifdef VCLK25
 	always @(posedge clk125mhz) begin
+`else
+	always @(posedge clk126mhz) begin
+`endif
 		ctr25mhz <= { ctr25mhz[0], ctr25mhz[4:1] };
 	end
 	assign clk25mhz = ctr25mhz[0];
+
+/*
+`ifdef EIS
+	// 126->50.114
+	SB_PLL40_PAD #(.FEEDBACK_PATH("SIMPLE"),
+		.PLLOUT_SELECT("GENCLK"),
+		.DIVR(4'b1010),
+		.DIVF(7'b1000101),
+		.DIVQ(3'b100),
+		.FILTER_RANGE(3'b001),
+	) pll_sysclk (
+		.RESETB(1'b1),
+		.BYPASS(1'b0),
+		.PACKAGEPIN(CLK_RP),
+		.PLLOUTCORE(clk),
+		.LOCK(pll_locked),
+	);
+	// 50.114->125.285
+	SB_PLL40_CORE #(.FEEDBACK_PATH("SIMPLE"),
+		.PLLOUT_SELECT("GENCLK"),
+		.DIVR(4'b0010),
+		.DIVF(7'b0111011),
+		.DIVQ(3'b011),
+		.FILTER_RANGE(3'b001),
+	) pll_bclk (
+		.RESETB(1'b1),
+		.BYPASS(1'b0),
+		.REFERENCECLK(clk),
+		.PLLOUTCORE(clk125mhz),
+	);
+   //	assign clk126mhz = CLK_RP;
+`endif
+*/
 
 `ifdef BONBON
 	wire clk48mhz;
@@ -253,7 +305,7 @@ module sysctl #()
 		.PLLOUTCORE(clk),
 		.LOCK(pll_locked),
 	);
-	assign clk125mhz = CLK_RP;		// = 126MHz & vclk = 25.2
+	assign clk126mhz = CLK_RP;
 `endif
 
 `ifdef OSC48
@@ -398,7 +450,6 @@ module sysctl #()
 		.rdata(ps2_rdata),
 		.rstrb(ps2_rstrb),
 		.dr(ps2_dr),
-		.ss(MUSLI_SS),
 		.sclk(MUSLI_SCK),
 		.mosi(MUSLI_MOSI),
 	);
@@ -409,6 +460,7 @@ module sysctl #()
 	assign KABELLOS_BOOT = 1'b1;
 `endif
 
+/*
 `ifdef EN_RPINT
 	wire [31:0] rpint_rdata;
 	wire [1:0] rpint_reg;
@@ -425,6 +477,7 @@ module sysctl #()
 		.mosi(RP_TX),
 	);
 `endif
+*/
 
 	// BLOCK RAM
 
@@ -810,7 +863,7 @@ module sysctl #()
 `endif
 
 `ifdef EN_VIDEO
-	gpu_video #() gpu_vga_i
+	gpu_video #() gpu_video_i
 	(
 		.clk(clk),
 		.vclk(clk25mhz),
@@ -832,13 +885,13 @@ module sysctl #()
 		.vsync(VGA_VS),
 `endif
 `ifdef EN_VIDEO_DDMI
-`ifdef BONBON
+`ifdef VCLK25
 		.bclk(clk125mhz),
 `else
 		.bclk(clk126mhz),
 `endif
-		.dvi_p({DDMI_CK_P, DDMI_D2_P, DDMI_D1_P, DDMI_D0_P}),
-		.dvi_n({DDMI_CK_N, DDMI_D2_N, DDMI_D1_N, DDMI_D0_N}),
+		.dvi_p({ DDMI_CK_P, DDMI_D2_P, DDMI_D1_P, DDMI_D0_P }),
+		.dvi_n({ DDMI_CK_N, DDMI_D2_N, DDMI_D1_N, DDMI_D0_N }),
 `endif
 `ifdef EN_VIDEO_COMPOSITE
 		.dac({ COMP_D3, COMP_D2, COMP_D1, COMP_D0 })
@@ -1467,21 +1520,9 @@ module sysctl #()
 							end
 							mem_ready <= 1;
 						end
-`else
-						16'h3000: begin
-							mem_ready <= 1;
-						end
 
-						16'h3004: begin
-							if (!mem_wstrb) begin
-								mem_rdata[7:0] <= 0;
-							end
-							mem_ready <= 1;
-						end
+`elsif EN_MUSLI_KBD
 
-`endif
-
-`ifdef EN_MUSLI_KBD
 						16'h3000: begin
 							if (!mem_wstrb) begin
 								mem_rdata[7:0] <= ps2_rdata;
@@ -1498,6 +1539,20 @@ module sysctl #()
 							end
 							mem_ready <= 1;
 						end
+
+`else
+
+						16'h3000: begin
+							mem_ready <= 1;
+						end
+
+						16'h3004: begin
+							if (!mem_wstrb) begin
+								mem_rdata[7:0] <= 0;
+							end
+							mem_ready <= 1;
+						end
+
 `endif
 
 `ifdef EN_KABELLOS
@@ -1603,6 +1658,8 @@ module sysctl #()
 
 	reg uart0_dr;
 	reg uart0_txbusy;
+
+	wire uart0_rx;
 
 	uart #(
 		.baud_rate(UART0_BAUDRATE),

@@ -20,6 +20,15 @@ zucker_riegel_pico:
 		--asc output/soc.txt --json output/soc.json --pcf-allow-unconstrained \
 		--opt-timing
 
+zucker_eis_pico:
+	mkdir -p output
+	yosys -DEIS $(CFG) -q -p \
+		"synth_ice40 -top sysctl -json output/soc.json" \
+		$(RTL_PICO)
+	nextpnr-ice40 --hx4k --package bg121 --pcf boards/eis.pcf \
+		--asc output/soc.txt --json output/soc.json --pcf-allow-unconstrained \
+		--opt-timing
+
 zucker_bonbon_pico:
 	mkdir -p output
 	yosys -DBONBON $(CFG) -q -p \
@@ -74,6 +83,11 @@ prog_riegel: firmware
 		| icepack > output/soc.bin
 	ldprog -s output/soc.bin
 
+prog_eis: firmware
+	icebram firmware/firmware_seed.hex firmware/firmware.hex < output/soc.txt \
+		| icepack > output/soc.bin
+	ldprog -is output/soc.bin
+
 prog_bonbon: firmware
 	icebram firmware/firmware_seed.hex firmware/firmware.hex < output/soc.txt \
 		| icepack > output/soc.bin
@@ -104,6 +118,12 @@ flash_riegel_soc:
 
 flash_riegel_lix:
 	ldprog -f apps/lix/lix.bin 50000
+
+flash_eis_soc:
+	ldprog -if output/soc.bin
+
+flash_eis_lix:
+	ldprog -if apps/lix/lix.bin 50000
 
 flash_riegel: flash_riegel_soc flash_riegel_lix
 

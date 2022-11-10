@@ -235,6 +235,8 @@ uint32_t crc32b(char *data, uint32_t len) {
 // put any SD card into SPI mode or it will cause problems on the SPI bus
 void sd_init(void) {
 
+	print("init sdcard to spi mode ... ");
+
 	reg_sd = SD_SS | SD_MOSI;
 
 	// dummy clocks
@@ -276,6 +278,7 @@ void sd_init(void) {
 
 	}
 
+	//	print("done\n");
 
 }
 
@@ -513,8 +516,8 @@ void main() {
 	print("ZBL\n");
 
 	// clear SRAM
-	addr_ptr = MEM_SRAM;
-	mem_total = MEM_SRAM_SIZE;
+//	addr_ptr = MEM_SRAM;
+//	mem_total = MEM_SRAM_SIZE;
 //	cmd_memzero();
 
 	addr_ptr = MEM_HRAM;
@@ -528,10 +531,6 @@ void main() {
 	print(" / /_   |  -'   \\  _| ' /\n");
  	print("/___/___|___|__\\_\\__|_:_\\\n");
 #endif
-
-//	print("init sdcard to spi mode ... ");
-//	sd_init();
-	print("done\n");
 
 	cmd_help();
 

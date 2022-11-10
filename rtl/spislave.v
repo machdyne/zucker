@@ -15,7 +15,6 @@ module spislave #()
 	input rstrb,
 	output dr,
 
-	input ss,
 	input sclk,
 	input mosi,
 
@@ -58,23 +57,16 @@ module spislave #()
 
 	end
 
-	always @(posedge sclk or posedge ss) begin
-
-		if (ss) begin
+	always @(posedge sclk) begin
+		if (xfer_bits == 7) begin
+			xfer_buffer <= { xfer_buffer, mosi };
 			xfer_bits <= 0;
-			xfer_done <= 0;
+			xfer_done <= 1;
 		end else begin
-			if (xfer_bits == 7) begin
-				xfer_buffer <= { xfer_buffer, mosi };
-				xfer_bits <= 0;
-				xfer_done <= 1;
-			end else begin
-				xfer_buffer <= { xfer_buffer, mosi };
-				xfer_bits <= xfer_bits + 1;
-				xfer_done <= 0;
-			end
+			xfer_buffer <= { xfer_buffer, mosi };
+			xfer_bits <= xfer_bits + 1;
+			xfer_done <= 0;
 		end
-
 	end
 
 endmodule
