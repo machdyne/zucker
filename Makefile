@@ -127,6 +127,8 @@ flash_eis_lix:
 
 flash_riegel: flash_riegel_soc flash_riegel_lix
 
+flash_eis: flash_eis_soc flash_eis_lix
+
 apps:
 	cd apps && make
 
