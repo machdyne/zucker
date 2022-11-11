@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define WIDTH 640
-#define HEIGHT 480
+#define WIDTH 320
+#define HEIGHT 240
 
 typedef struct color_t {
 
@@ -33,19 +33,25 @@ int main(void) {
 	blue.blue = 0xff;
 
 	void *addr = (void *)0x20000000;
-	memset(addr, 0, 640*480/2);
+	memset(addr, 0, 320*240/2);
 
-	for (int x = 50; x < 60; x++)
-		draw_pixel(x, 50, red);
+	int px, py, c = 0;
 
-	for (int x = 50; x < 60; x++)
-		draw_pixel(x, 150, green);
+	while (1) {
 
-	for (int x = 50; x < 60; x++)
-		draw_pixel(x, 250, blue);
+		px = (rand() % WIDTH) - 5;
+		py = (rand() % HEIGHT) - 5;
+		c = rand() % 3;
 
-	for (int y = 50; y < 60; y++)
-		draw_line(100, y, 300, y, red);
+		for (int y = py; y < py+5; y++) {
+			for (int x = px; x < px+5; x++) {
+				draw_pixel(x, y, c == 0 ? blue : c == 1 ? red : green);
+			}
+		}
+
+	}
+
+	return(0);
 
 }
 
@@ -62,17 +68,17 @@ void draw_pixel(uint16_t x, uint16_t y, color_t color) {
 
 		pixel &= 0xf0;
  
-		if (color.red) pixel |= 0b0001;
+		if (color.blue) pixel |= 0b0001;
 		if (color.green) pixel |= 0b0010;
-		if (color.blue) pixel |= 0b0100;
+		if (color.red) pixel |= 0b0100;
 
 	} else {
 
 		pixel &= 0x0f; 
 
-		if (color.red) pixel |= 0b00010000;
+		if (color.blue) pixel |= 0b00010000;
 		if (color.green) pixel |= 0b00100000;
-		if (color.blue) pixel |= 0b01000000;
+		if (color.red) pixel |= 0b01000000;
 
 	}
 

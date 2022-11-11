@@ -76,6 +76,7 @@
 `define EN_GPU
 `define EN_GPU_TEXT
 `define EN_GPU_FB
+`define EN_GPU_FB_PIXEL_DOUBLING
 `define EN_VIDEO
 `define EN_VIDEO_VGA
 `define EN_VIDEO_DDMI

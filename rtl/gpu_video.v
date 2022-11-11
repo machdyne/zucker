@@ -27,9 +27,15 @@ module gpu_video #(
 ) (
 
 	input pixel,
+`ifdef EN_GPU_FB_PIXEL_DOUBLING
+	input [319:0] hline_r,
+	input [319:0] hline_g,
+	input [319:0] hline_b,
+`else
 	input [639:0] hline_r,
 	input [639:0] hline_g,
 	input [639:0] hline_b,
+`endif
 	output reg refill,
 
 	input clk,
@@ -52,6 +58,8 @@ module gpu_video #(
 	output [9:0] vc,
 	output reg [9:0] x,
 	output reg [9:0] y,
+	output [8:0] hx,
+	output [8:0] hy,
 	output is_visible,
 
 );
@@ -59,10 +67,19 @@ module gpu_video #(
 	reg refill_vclk;
 	reg refill_vclk_last;
 
+	assign hx = x >> 1;
+	assign hy = y >> 1;
+
 `ifdef EN_GPU_FB
+`ifdef EN_GPU_FB_PIXEL_DOUBLING
+	assign red = (is_visible && (hline_r[hx] || pixel)) ? 1'b1 : 1'b0;
+	assign green = (is_visible && (hline_g[hx] || pixel)) ? 1'b1 : 1'b0;
+	assign blue = (is_visible && (hline_b[hx] || pixel)) ? 1'b1 : 1'b0;
+`else
 	assign red = (is_visible && (hline_r[x] || pixel)) ? 1'b1 : 1'b0;
 	assign green = (is_visible && (hline_g[x] || pixel)) ? 1'b1 : 1'b0;
 	assign blue = (is_visible && (hline_b[x] || pixel)) ? 1'b1 : 1'b0;
+`endif
 `else
 	assign red = (is_visible && pixel) ? 1'b1 : 1'b0;
 	assign green = (is_visible && pixel) ? 1'b1 : 1'b0;

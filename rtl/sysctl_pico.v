@@ -848,15 +848,23 @@ module sysctl #()
 `ifdef EN_GPU
 	wire gpu_refill;
 	wire [9:0] gpu_x;
+	wire [8:0] gpu_hx;
 	wire [9:0] gpu_y;
+	wire [8:0] gpu_hy;
 	reg [7:0] gpu_refill_words;
 	wire gpu_pixel;
 `endif
 
 `ifdef EN_GPU_FB
+`ifdef EN_GPU_FB_PIXEL_DOUBLING
+	reg [319:0] gpu_hline_r;
+	reg [319:0] gpu_hline_g;
+	reg [319:0] gpu_hline_b;
+`else
 	reg [639:0] gpu_hline_r;
 	reg [639:0] gpu_hline_g;
 	reg [639:0] gpu_hline_b;
+`endif
 	assign gpu_lock = (gpu_refill_words && sram_state == 0);
 `else
 	assign gpu_lock = 0;
@@ -876,6 +884,8 @@ module sysctl #()
 `endif
 		.x(gpu_x),
 		.y(gpu_y),
+		.hx(gpu_hx),
+		.hy(gpu_hy),
 		.refill(gpu_refill),
 `ifdef EN_VIDEO_VGA
 		.red(VGA_R),
@@ -975,17 +985,29 @@ module sysctl #()
 `ifdef EN_GPU_FB
 		if (gpu_refill) begin
 `ifdef EN_SRAM16
+`ifdef EN_GPU_FB_PIXEL_DOUBLING
+			gpu_refill_words <= 80;
+`else
 			gpu_refill_words <= 160;
 `endif
+`endif
 `ifdef EN_SRAM32
+`ifdef EN_GPU_FB_PIXEL_DOUBLING
+			gpu_refill_words <= 40;
+`else
 			gpu_refill_words <= 80;
+`endif
 `endif
 		end
 
 		if (gpu_lock) begin
 
 `ifdef EN_SRAM16
+`ifdef EN_GPU_FB_PIXEL_DOUBLING
+			sram_addr <= (gpu_hy << 6) + (gpu_hy << 4) + gpu_refill_words;
+`else
 			sram_addr <= (gpu_y << 7) + (gpu_y << 5) + gpu_refill_words;
+`endif
 			gpu_hline_r <= { gpu_hline_r,
 				sram_din[10], sram_din[14], sram_din[2], sram_din[6] };
 
@@ -996,7 +1018,11 @@ module sysctl #()
 				sram_din[8], sram_din[12], sram_din[0], sram_din[4] };
 `endif
 `ifdef EN_SRAM32
+`ifdef EN_GPU_FB_PIXEL_DOUBLING
+			sram_addr <= (gpu_hy << 5) + (gpu_hy << 3) + gpu_refill_words;
+`else
 			sram_addr <= (gpu_y << 6) + (gpu_y << 4) + gpu_refill_words;
+`endif
 			gpu_hline_r <= { gpu_hline_r,
 				sram_din[26], sram_din[30], sram_din[18], sram_din[22],
 				sram_din[10], sram_din[14], sram_din[2], sram_din[6] };
