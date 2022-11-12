@@ -111,7 +111,7 @@ lix> (load myfiles/lisp/hello.l)
 
 ### PMODs
 
-The default configuration assumes that a UART PMOD is connected to PMODB.
+The default configuration assumes that a USB-UART PMOD is connected to PMODB (or PMODA if the device only has one PMOD).
 
 ### Memory Map
 
@@ -124,8 +124,8 @@ The default configuration assumes that a UART PMOD is connected to PMODB.
 | ``80000000`` | ``8fffffff`` | - | MMOD (read-only flash memory) |
 | ``a0000000`` | ``afffffff`` | - | Cartridge memory (Keks PMODA) |
 | ``e0000000`` | ``efffffff`` | - | RPMEM |
-| ``f0000000`` | ``f0000000`` | 1 | UART data register |
-| ``f0000004`` | ``f0000004`` | 1 | UART control register |
+| ``f0000000`` | ``f0000000`` | 1 | UART0 data register |
+| ``f0000004`` | ``f0000004`` | 1 | UART0 control register |
 | ``f0001000`` | ``f0001000`` | 1 | LED control register |
 | ``f0001100`` | ``f0001103`` | 4 | RTC seconds counter register |
 | ``f0002000`` | ``f0002000`` | 1 | SD card SPI register |
@@ -134,17 +134,17 @@ The default configuration assumes that a UART PMOD is connected to PMODB.
 
 ### Video Graphics
 
-There is a 640x480 framebuffer at the beginning of the SRAM.
+There is a 640x480 or 320x240 framebuffer at the beginning of the SRAM, depending on whether or not pixel doubling is enabled.
 
 Each byte in the framebuffer contains two pixels: XRGBXRGB. X is an unused bit.
 
-This uses 153600 bytes of the SRAM. The remaining SRAM is unused and available.
+The remaining SRAM is currently unused and available.
 
 ### Video Text
 
 There is a 80x25 character buffer in BRAM at 0x10000000.
 
-Writing an ASCII character to the video text memory will display it on the screen.
+Writing an ASCII character to this video text memory will display it on the screen.
 
 Text and graphics can be displayed at the same time.
 
