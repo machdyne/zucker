@@ -9,7 +9,10 @@ RTL_PICO=rtl/sysctl_pico.v rtl/uart.v \
 YOSYS=yosys
 NEXTPNR=nextpnr-ice40
 
-all: firmware zucker_riegel_pico apps
+riegel: firmware zucker_riegel_pico apps
+eis: firmware zucker_eis_pico apps
+bonbon: firmware zucker_bonbon_pico apps
+keks: firmware zucker_keks_pico apps
 
 zucker_riegel_pico:
 	mkdir -p output
@@ -113,16 +116,16 @@ prog_icoboard: firmware
 		| icepack > output/soc.bin
 	icoprog -p < output/soc.bin
 
-flash_riegel_soc:
+flash_riegel_soc: firmware
 	ldprog -f output/soc.bin
 
-flash_riegel_lix:
+flash_riegel_lix: firmware
 	ldprog -f apps/lix/lix.bin 50000
 
-flash_eis_soc:
+flash_eis_soc: firmware
 	ldprog -if output/soc.bin
 
-flash_eis_lix:
+flash_eis_lix: firmware
 	ldprog -if apps/lix/lix.bin 50000
 
 flash_riegel: flash_riegel_soc flash_riegel_lix
@@ -141,4 +144,4 @@ clean_apps:
 clean_firmware:
 	cd firmware && make clean
 
-.PHONY: clean_firmware firmware
+.PHONY: clean_firmware firmware apps
