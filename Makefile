@@ -117,12 +117,16 @@ prog_icoboard: firmware
 	icoprog -p < output/soc.bin
 
 flash_riegel_soc: firmware
+	icebram firmware/firmware_seed.hex firmware/firmware.hex < output/soc.txt \
+		| icepack > output/soc.bin
 	ldprog -f output/soc.bin
 
 flash_riegel_lix: firmware
 	ldprog -f apps/lix/lix.bin 50000
 
 flash_eis_soc: firmware
+	icebram firmware/firmware_seed.hex firmware/firmware.hex < output/soc.txt \
+		| icepack > output/soc.bin
 	ldprog -if output/soc.bin
 
 flash_eis_lix: firmware
