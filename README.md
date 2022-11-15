@@ -19,23 +19,29 @@ Zucker was created as a demo platform and a starting point for developing gatewa
 
 Building Zucker requires [Yosys](https://github.com/YosysHQ/yosys), [nextpnr-ice40](https://github.com/YosysHQ/nextpnr), [IceStorm](https://github.com/YosysHQ/icestorm) and a [RV32I toolchain](https://github.com/YosysHQ/picorv32#building-a-pure-rv32i-toolchain).
 
-After everything is installed, you can simply type `make` to build the Riegel FPGA configuration image, which will be written to output/soc.bin. This will also build the firmware and demo apps.
-
-Or to build the Eis gateware:
+After everything is installed, to build the SOC:
 
 ```
-make zucker_eis_pico
+make <board>
 ```
+
+For example:
+
+```
+make eis
+```
+
+This will build the firmware and FPGA configuration image and write them to `output/soc.bin`. It will also build the demo apps.
 
 ### Flashing the MMOD
 
 Once the gateware, firmware and demo apps are built, you can use [ldprog](https://github.com/machdyne/ldprog) to write everything to the MMOD:
 
 ```
-make flash_riegel
+make flash_<board>
 ```
 
-Or for Eis:
+For example:
 
 ```
 make flash_eis
