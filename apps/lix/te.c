@@ -82,7 +82,7 @@ typedef struct te_line_t {
 int mode = MODE_MOVE;
 int state = STATE_NONE;
 
-int curs_x, curs_y;
+extern int curs_x, curs_y;
 int f_lines;
 
 te_lines_t *lines;
