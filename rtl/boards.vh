@@ -36,6 +36,8 @@
 `define EN_HRAM
 `define EN_GPU
 `define EN_GPU_TEXT
+`define EN_GPU_FB
+`define EN_GPU_FB_PIXEL_DOUBLING
 `define EN_VIDEO
 `define EN_VIDEO_VGA
 `define EN_VIDEO_DDMI
@@ -69,8 +71,9 @@
 //`define EN_RTC
 `define EN_CLK10KHZ
 //`define EN_CSPI_RPMEM
-`define EN_CART
+//`define EN_CART
 `define EN_RPINT
+`define EN_RPDEBUG
 `define EN_SRAM32
 `define EN_HRAM
 `define EN_GPU

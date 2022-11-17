@@ -82,7 +82,7 @@ typedef struct te_line_t {
 int mode = MODE_MOVE;
 int state = STATE_NONE;
 
-int curs_x, curs_y;
+int te_curs_x, te_curs_y;
 int f_lines;
 
 te_lines_t *lines;
@@ -119,8 +119,8 @@ void te_init(void) {
 	printf(VT100_ERASE_SCREEN);
 	fflush(stdout);
 
-	curs_x = 0;
-	curs_y = 0;
+	te_curs_x = 0;
+	te_curs_y = 0;
 
 	te_redraw();
 
@@ -129,8 +129,8 @@ void te_init(void) {
 void te_status(void) {
 	printf(VT100_CURSOR_MOVE_TO, 24, 0);
 	printf(VT100_ERASE_LINE);
-	printf("te x%i y%i", curs_x, curs_y);
-	printf(VT100_CURSOR_MOVE_TO, curs_y + 1, curs_x + 1);
+	printf("te x%i y%i", te_curs_x, te_curs_y);
+	printf(VT100_CURSOR_MOVE_TO, te_curs_y + 1, te_curs_x + 1);
 	fflush(stdout);
 }
 
@@ -160,10 +160,10 @@ int te_yield(void) {
 
 		default:
 			if (state == STATE_ESC1) {
-				if (c == 'A') { curs_y--; printf(VT100_CURSOR_UP); }
-				if (c == 'B') { curs_y++; printf(VT100_CURSOR_DOWN); } 
-				if (c == 'C') { curs_x++; printf(VT100_CURSOR_RIGHT); }
-				if (c == 'D') { curs_x--; printf(VT100_CURSOR_LEFT); }
+				if (c == 'A') { te_curs_y--; printf(VT100_CURSOR_UP); }
+				if (c == 'B') { te_curs_y++; printf(VT100_CURSOR_DOWN); } 
+				if (c == 'C') { te_curs_x++; printf(VT100_CURSOR_RIGHT); }
+				if (c == 'D') { te_curs_x--; printf(VT100_CURSOR_LEFT); }
 				fflush(stdout);
 				state = STATE_NONE;
 				break;
@@ -171,32 +171,32 @@ int te_yield(void) {
 
 			if (state == STATE_NONE) {
 				if (c == CH_BS || c == CH_DEL) {
-					curs_x--;
-					if (curs_x > 0)
-						te_delete(curs_y, curs_x);
+					te_curs_x--;
+					if (te_curs_x > 0)
+						te_delete(te_curs_y, te_curs_x);
 					te_redraw();
 				} else if (c == CH_LF || c == CH_CR) {
-					curs_x = 0;
-					if (curs_y + 1 >= f_lines) {
-						te_insert_line(curs_y);
+					te_curs_x = 0;
+					if (te_curs_y + 1 >= f_lines) {
+						te_insert_line(te_curs_y);
 						f_lines++;
 					}
-					curs_y++;
+					te_curs_y++;
 					te_redraw();
 				} else {
-					te_insert(curs_y, curs_x, c);
+					te_insert(te_curs_y, te_curs_x, c);
 					te_redraw();
-					curs_x++;
+					te_curs_x++;
 				}
 			}
 			break;
 
 	}
 
-	if (curs_x < 0) curs_x = 0;
-	if (curs_x > COLS - 1) curs_x = COLS - 1;
-	if (curs_y < 0) curs_y = 0;
-	if (curs_y > ROWS - 1) curs_y = ROWS - 1;
+	if (te_curs_x < 0) te_curs_x = 0;
+	if (te_curs_x > COLS - 1) te_curs_x = COLS - 1;
+	if (te_curs_y < 0) te_curs_y = 0;
+	if (te_curs_y > ROWS - 1) te_curs_y = ROWS - 1;
 
 	te_status();
 

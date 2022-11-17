@@ -516,9 +516,9 @@ void main() {
 	print("ZBL\n");
 
 	// clear SRAM
-//	addr_ptr = MEM_SRAM;
-//	mem_total = MEM_SRAM_SIZE;
-//	cmd_memzero();
+	addr_ptr = MEM_SRAM;
+	mem_total = MEM_SRAM_SIZE;
+	cmd_memzero();
 
 	addr_ptr = MEM_HRAM;
 	mem_total = MEM_HRAM_SIZE;

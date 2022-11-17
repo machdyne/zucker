@@ -192,26 +192,36 @@ module sysctl #()
 `endif
 `endif
 
+`ifdef EN_RPINT
+	input RP_INT,
+	input RP_TX,
+	input RP_HOLD,
+`endif
+
+`ifdef EIS
 `ifdef EN_RPDEBUG
 	output PMOD_A8,
 	output PMOD_A10,
 	input RP_TX,
 `endif
-
-`ifdef KEKS
-	input BTN,
 `endif
 
-`ifdef EN_RPINT
-	input RP_INT,
-	input RP_TX,
+`ifdef KEKS
+`ifdef EN_RPDEBUG
+	input BTN,
+	output PMOD_A2,
+`endif
 `endif
 
 );
 
 `ifdef EN_RPDEBUG
+`ifdef KEKS
+	assign PMOD_A2 = BTN;
+`elsif EIS
 	assign PMOD_A8 = RP_TX;
 	assign PMOD_A10 = 0; // CTS
+`endif
 `endif
 
 	// CLOCKS
@@ -460,11 +470,9 @@ module sysctl #()
 	assign KABELLOS_BOOT = 1'b1;
 `endif
 
-/*
 `ifdef EN_RPINT
 	wire [31:0] rpint_rdata;
 	wire [1:0] rpint_reg;
-	reg rpint_rstrb;
 
 	assign rpint_reg = mem_addr[2];
 
@@ -473,11 +481,11 @@ module sysctl #()
 		.resetn(resetn),
 		.rreg(rpint_reg),
 		.rdata(rpint_rdata),
+		.ss(RP_HOLD),
 		.sclk(RP_INT),
 		.mosi(RP_TX),
 	);
 `endif
-*/
 
 	// BLOCK RAM
 
