@@ -47,6 +47,18 @@ For example:
 make flash_eis
 ```
 
+### Serial Console
+
+The default configuration assumes that a UART PMOD is connected to PMODB (or PMODA if there's only one PMOD on the device).
+
+If for example your USB-UART PMOD is on /dev/ttyUSB0 you can access the serial console using minicom:
+
+```
+$ minicom -D /dev/ttyUSB0 115200
+```
+
+Ensure that hardware flow control is *enabled*. In minicom this is under CTRL-A O, Serial port setup, Hardware Flow Control.
+
 ## Boot Process
 
 0. USB Bootloader (optional)
