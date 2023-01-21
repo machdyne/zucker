@@ -54,7 +54,7 @@ The default configuration assumes that a UART PMOD is connected to PMODB (or PMO
 If for example your USB-UART PMOD is on /dev/ttyUSB0 you can access the serial console using minicom:
 
 ```
-$ minicom -D /dev/ttyUSB0 115200
+$ minicom -D /dev/ttyUSB0 -b 115200
 ```
 
 Ensure that hardware flow control is *enabled*. In minicom this is under CTRL-A O, Serial port setup, Hardware Flow Control.
