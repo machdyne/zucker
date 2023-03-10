@@ -43,7 +43,9 @@ module sysctl #()
 
 	inout SPI_MISO,
 	inout SPI_MOSI,
+`ifndef FPGA_ECP5
 	output SPI_SCK,
+`endif
 
 `ifdef EN_CSPI_FLASH
 	output SPI_SS_FLASH,
@@ -101,13 +103,15 @@ module sysctl #()
 
 `ifdef EN_VIDEO_DDMI
 	output DDMI_D0_P,
-	output DDMI_D0_N,
 	output DDMI_D1_P,
-	output DDMI_D1_N,
 	output DDMI_D2_P,
-	output DDMI_D2_N,
 	output DDMI_CK_P,
+`ifndef FPGA_ECP5
+	output DDMI_D0_N,
+	output DDMI_D1_N,
+	output DDMI_D2_N,
 	output DDMI_CK_N,
+`endif
 `endif
 
 `ifdef EN_VIDEO_COMPOSITE
@@ -192,6 +196,19 @@ module sysctl #()
 `endif
 `endif
 
+`ifdef EN_SDRAM
+	output [12:0] sdram_a,
+	inout [15:0] sdram_dq,
+	output sdram_cs_n,
+	output sdram_cke,
+	output sdram_ras_n,
+	output sdram_cas_n,
+	output sdram_we_n,
+	output [1:0] sdram_dm,
+	output [1:0] sdram_ba,
+	output sdram_clock,
+`endif
+
 `ifdef EN_RPINT
 	input RP_INT,
 	input RP_TX,
@@ -231,6 +248,7 @@ module sysctl #()
 
 	wire clk25mhz;
 	wire clk50mhz;
+	wire clk100mhz;
 	wire clk125mhz;
 	wire clk126mhz;
 
@@ -249,8 +267,7 @@ module sysctl #()
 
 	wire pll_locked;
 
-
-
+`ifdef FPGA_ICE40
 	reg [4:0] ctr25mhz = 5'b00011;
 `ifdef VCLK25
 	always @(posedge clk125mhz) begin
@@ -260,39 +277,7 @@ module sysctl #()
 		ctr25mhz <= { ctr25mhz[0], ctr25mhz[4:1] };
 	end
 	assign clk25mhz = ctr25mhz[0];
-
-/*
-`ifdef EIS
-	// 126->50.114
-	SB_PLL40_PAD #(.FEEDBACK_PATH("SIMPLE"),
-		.PLLOUT_SELECT("GENCLK"),
-		.DIVR(4'b1010),
-		.DIVF(7'b1000101),
-		.DIVQ(3'b100),
-		.FILTER_RANGE(3'b001),
-	) pll_sysclk (
-		.RESETB(1'b1),
-		.BYPASS(1'b0),
-		.PACKAGEPIN(CLK_RP),
-		.PLLOUTCORE(clk),
-		.LOCK(pll_locked),
-	);
-	// 50.114->125.285
-	SB_PLL40_CORE #(.FEEDBACK_PATH("SIMPLE"),
-		.PLLOUT_SELECT("GENCLK"),
-		.DIVR(4'b0010),
-		.DIVF(7'b0111011),
-		.DIVQ(3'b011),
-		.FILTER_RANGE(3'b001),
-	) pll_bclk (
-		.RESETB(1'b1),
-		.BYPASS(1'b0),
-		.REFERENCECLK(clk),
-		.PLLOUTCORE(clk125mhz),
-	);
-   //	assign clk126mhz = CLK_RP;
 `endif
-*/
 
 `ifdef BONBON
 	wire clk48mhz;
@@ -318,6 +303,7 @@ module sysctl #()
 	assign clk126mhz = CLK_RP;
 `endif
 
+`ifdef FPGA_ICE40
 `ifdef OSC48
 	// 48->50
 	SB_PLL40_PAD #(.FEEDBACK_PATH("SIMPLE"),
@@ -386,6 +372,22 @@ module sysctl #()
 `elsif SYSCLK50
 	assign clk = clk50mhz;
 `endif
+`endif
+`endif
+
+`ifdef FPGA_ECP5
+	pll0 #() ecp5_pll0 (
+		.clkin(CLK_48),
+		.clkout0(clk100mhz),
+		.clkout1(clk50mhz),
+	);
+	pll1 #() ecp5_pll1 (
+		.clkin(clk100mhz),
+		.clkout0(clk125mhz),
+		.clkout1(clk25mhz),
+		.locked(pll_locked),
+	);
+	assign clk = clk50mhz;
 `endif
 
 	// RESET GENERATOR
@@ -492,13 +494,19 @@ module sysctl #()
 `ifdef EN_LOWBRAM
 	localparam BRAM_WORDS = 1280;	// 32-bit words
 `else
-	localparam BRAM_WORDS = 1536;	// 32-bit words
+	localparam BRAM_WORDS = 1536;
 `endif
 	reg [31:0] bram [0:BRAM_WORDS-1];   
+	wire [13:0] bsram_word = mem_addr[14:2];
 	wire [10:0] bram_word = mem_addr[14:2];
 	initial $readmemh("firmware/firmware_seed.hex", bram);
 
 	// SPI
+
+`ifdef FPGA_ECP5
+	wire SPI_SCK;
+	USRMCLK usrmclk0 (.USRMCLKI(SPI_SCK), .USRMCLKTS(1'b0));
+`endif
 
 	wire spi_is_flash = ((mem_addr & 32'hf000_0000) == 32'h8000_0000);
 	wire spi_is_ram = ((mem_addr & 32'hf000_0000) == 32'h4000_0000);
@@ -628,6 +636,14 @@ module sysctl #()
       .miso(CART_MISO)
    );
 
+`endif
+
+`ifdef EN_BSRAM32
+	reg [31:0] bsram [0:9599];	// 320*240*4/32
+   reg [17:0] sram_addr;
+   wire [31:0] sram_din;
+	reg sram_state;
+	assign sram_din = bsram[sram_addr >> 2];
 `endif
 
 `ifdef EN_SRAM16
@@ -848,8 +864,43 @@ module sysctl #()
 	);
 
 `endif
-
 `endif
+
+`ifdef EN_SDRAM
+
+   reg [2:0] sdram_state;
+
+	reg [31:0] sdram_addr;
+	wire [15:0] sdram_din;
+	reg [15:0] sdram_dout;
+	reg sdram_wstrb;
+	reg sdram_rstrb;
+	wire sdram_ready;
+
+	sdram #() sdram_i
+	(
+		.clk(clk),
+		.resetn(resetn),
+		.addr(sdram_addr),
+		.rdata(sdram_din),
+		.wdata(sdram_dout),
+		.wstrb(sdram_wstrb),
+		.rstrb(sdram_rstrb),
+		.ready(sdram_ready),
+		.sdclk(sdram_clock),
+		.cke(sdram_cke),
+		.cs_n(sdram_cs_n),
+		.ras_n(sdram_ras_n),
+		.cas_n(sdram_cas_n),
+		.we_n(sdram_we_n),
+		.a(sdram_a),
+		.ba(sdram_ba),
+		.dq(sdram_dq),
+		.dm(sdram_dm),
+);
+`endif
+
+// --
 
 	wire gpu_lock;
 
@@ -909,7 +960,9 @@ module sysctl #()
 		.bclk(clk126mhz),
 `endif
 		.dvi_p({ DDMI_CK_P, DDMI_D2_P, DDMI_D1_P, DDMI_D0_P }),
+`ifndef FPGA_ECP5
 		.dvi_n({ DDMI_CK_N, DDMI_D2_N, DDMI_D1_N, DDMI_D0_N }),
+`endif
 `endif
 `ifdef EN_VIDEO_COMPOSITE
 		.dac({ COMP_D3, COMP_D2, COMP_D1, COMP_D0 })
@@ -975,6 +1028,10 @@ module sysctl #()
 		sram1_wrlb <= 0;
 		sram1_wrub <= 0;
 `endif
+`ifdef EN_SDRAM
+		sdram_wstrb <= 0;
+		sdram_rstrb <= 0;
+`endif
 
 `ifdef EN_PS2
 		ps2_rstrb <= 0;
@@ -1006,6 +1063,13 @@ module sysctl #()
 			gpu_refill_words <= 80;
 `endif
 `endif
+`ifdef EN_BSRAM32
+`ifdef EN_GPU_FB_PIXEL_DOUBLING
+			gpu_refill_words <= 40;
+`else
+			gpu_refill_words <= 80;
+`endif
+`endif
 		end
 
 		if (gpu_lock) begin
@@ -1025,7 +1089,27 @@ module sysctl #()
 			gpu_hline_b <= { gpu_hline_b,
 				sram_din[8], sram_din[12], sram_din[0], sram_din[4] };
 `endif
+
 `ifdef EN_SRAM32
+`ifdef EN_GPU_FB_PIXEL_DOUBLING
+			sram_addr <= (gpu_hy << 5) + (gpu_hy << 3) + gpu_refill_words;
+`else
+			sram_addr <= (gpu_y << 6) + (gpu_y << 4) + gpu_refill_words;
+`endif
+			gpu_hline_r <= { gpu_hline_r,
+				sram_din[26], sram_din[30], sram_din[18], sram_din[22],
+				sram_din[10], sram_din[14], sram_din[2], sram_din[6] };
+
+			gpu_hline_g <= { gpu_hline_g,
+				sram_din[25], sram_din[29], sram_din[17], sram_din[21],
+				sram_din[9], sram_din[13], sram_din[1], sram_din[5] };
+
+			gpu_hline_b <= { gpu_hline_b,
+				sram_din[24], sram_din[28], sram_din[16], sram_din[20],
+				sram_din[8], sram_din[12], sram_din[0], sram_din[4] };
+`endif
+
+`ifdef EN_BSRAM32
 `ifdef EN_GPU_FB_PIXEL_DOUBLING
 			sram_addr <= (gpu_hy << 5) + (gpu_hy << 3) + gpu_refill_words;
 `else
@@ -1101,6 +1185,12 @@ module sysctl #()
 `ifdef EN_SRAM32
 			sram_state <= 0;
 `endif
+`ifdef EN_BSRAM32
+			sram_state <= 0;
+`endif
+`ifdef EN_SDRAM
+			sdram_state <= 0;
+`endif
 `ifdef EN_SPRAM
 			spram_state <= 0;
 `endif
@@ -1129,10 +1219,31 @@ module sysctl #()
 					if (mem_wstrb[2]) bram[bram_word][23:16] <= mem_wdata[23:16];
 					if (mem_wstrb[3]) bram[bram_word][31:24] <= mem_wdata[31:24];
 
-					mem_rdata <= bram[mem_addr >> 2];
+					mem_rdata <= bram[bram_word];
 					mem_ready <= 1;
 
 				end
+
+`ifdef EN_BSRAM32
+				// BLOCK RAM AS 32-bit SRAM
+				(((mem_addr & 32'hf000_0000) == 32'h2000_0000) && !gpu_lock): begin
+			
+					sram_state <= 1;
+
+					if (mem_wstrb[0]) bsram[bsram_word][7:0] <= mem_wdata[7:0];
+					if (mem_wstrb[1]) bsram[bsram_word][15:8] <= mem_wdata[15:8];
+					if (mem_wstrb[2]) bsram[bsram_word][23:16] <= mem_wdata[23:16];
+					if (mem_wstrb[3]) bsram[bsram_word][31:24] <= mem_wdata[31:24];
+
+					mem_rdata <= bsram[bsram_word];
+
+					if (sram_state == 1) begin
+						sram_state <= 0;
+						mem_ready <= 1;
+					end
+
+				end
+`endif
 
 `ifdef EN_GPU_TEXT
 				((mem_addr & 32'hf000_0000) == 32'h1000_0000): begin
@@ -1374,6 +1485,56 @@ module sysctl #()
 							mem_ready <= 1;
 						end
 
+					end
+
+				end
+`endif
+
+`ifdef EN_SDRAM
+				((mem_addr & 32'hf000_0000) == 32'h4000_0000): begin
+
+					if (mem_wstrb) begin
+						(* parallel_case, full_case *)
+						case (sdram_state)
+							0: begin
+								sdram_addr <= {(mem_addr & 32'h0fff_ffff) >> 2, 1'b0};
+								sdram_dout <= mem_wdata[15:0];
+								sdram_wstrb <= mem_wstrb[0] || mem_wstrb[1];
+								sdram_state <= 1;
+							end
+							1: begin
+								sdram_addr <= {(mem_addr & 32'h0fff_ffff) >> 2, 1'b1};
+								sdram_dout <= mem_wdata[31:16];
+								sdram_wstrb <= mem_wstrb[2] || mem_wstrb[3];
+								sdram_state <= 0;
+								mem_ready <= 1;
+							end
+						endcase
+					end else begin
+						(* parallel_case, full_case *)
+						case (sdram_state)
+							0: begin
+								sdram_addr <= {(mem_addr & 32'h0fff_ffff) >> 2, 1'b0};
+								sdram_rstrb <= 1;
+								sdram_state <= 1;
+							end
+							1: begin
+								if (sdram_ready) begin
+									mem_rdata[15:0] <= sdram_din;
+									sdram_addr <=
+										{(mem_addr & 32'h0fff_ffff) >> 2, 1'b1};
+									sdram_rstrb <= 1;
+									sdram_state <= 2;
+								end
+							end
+							2: begin
+								if (sdram_ready) begin
+									mem_rdata[31:16] <= sdram_din;
+									sdram_state <= 0;
+									mem_ready <= 1;
+								end
+							end
+						endcase
 					end
 
 				end

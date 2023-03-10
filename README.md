@@ -12,6 +12,7 @@ Zucker was created as a demo platform and a starting point for developing gatewa
 - [Eis](https://machdyne.com/product/eis-computer)
 - [Bonbon](https://machdyne.com/product/bonbon-computer)
 - [Keks](https://machdyne.com/product/keks-game-console)
+- [Schoko](https://machdyne.com/product/schoko-computer)
 
 ## Getting Started
 
@@ -22,13 +23,13 @@ Building Zucker requires [Yosys](https://github.com/YosysHQ/yosys), [nextpnr-ice
 After everything is installed, to build the SOC:
 
 ```
-make <board>
+make BOARD=<board>
 ```
 
 For example:
 
 ```
-make eis
+make BOARD=eis
 ```
 
 This will build the firmware and FPGA configuration image and write them to `output/soc.bin`. It will also build the demo apps.
@@ -38,13 +39,13 @@ This will build the firmware and FPGA configuration image and write them to `out
 Once the gateware, firmware and demo apps are built, you can use [ldprog](https://github.com/machdyne/ldprog) to write everything to the MMOD:
 
 ```
-make flash_<board>
+make BOARD=<board> flash
 ```
 
 For example:
 
 ```
-make flash_eis
+make BOARD=eis flash
 ```
 
 ### Serial Console

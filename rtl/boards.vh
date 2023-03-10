@@ -54,11 +54,11 @@
 `define EN_CLK10KHZ
 `define EN_CSPI_FLASH
 `define EN_QQSPI
-`define EN_GPU
-`define EN_GPU_TEXT
-`define EN_VIDEO
-`define EN_VIDEO_VGA
-`define EN_VIDEO_DDMI
+//`define EN_GPU
+//`define EN_GPU_TEXT
+//`define EN_VIDEO
+//`define EN_VIDEO_VGA
+//`define EN_VIDEO_DDMI
 
 `elsif KEKS
 
@@ -85,5 +85,24 @@
 `define EN_VIDEO_DDMI
 //`define EN_VIDEO_COMPOSITE
 `define EN_AUDIO
+
+`elsif SCHOKO
+
+`define FPGA_ECP5
+`define OSC48
+`define SYSCLK50
+`define VCLK25
+//`define EN_SDRAM
+`define EN_BSRAM32
+`define EN_UART0
+`define EN_RTC
+`define EN_CLK10KHZ
+`define EN_GPU
+`define EN_GPU_TEXT
+`define EN_GPU_FB
+`define EN_GPU_FB_PIXEL_DOUBLING
+`define EN_VIDEO
+`define EN_VIDEO_VGA
+`define EN_VIDEO_DDMI
 
 `endif

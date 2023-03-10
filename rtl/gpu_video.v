@@ -93,6 +93,7 @@ module gpu_video #(
 	wire [1:0] out_tmds_blue;
 	wire [1:0] out_tmds_clk;
 
+`ifdef FPGA_ICE40
 	SB_LVCMOS SB_LVCMOS_RED (.DP(dvi_p[2]), .DN(dvi_n[2]), .clk_x5(bclk),
 		.tmds_signal(out_tmds_red));
 	SB_LVCMOS SB_LVCMOS_GREEN (.DP(dvi_p[1]), .DN(dvi_n[1]), .clk_x5(bclk),
@@ -101,6 +102,20 @@ module gpu_video #(
 		.tmds_signal(out_tmds_blue));
 	SB_LVCMOS SB_LVCMOS_CLK (.DP(dvi_p[3]), .DN(dvi_n[3]), .clk_x5(bclk),
 		.tmds_signal(out_tmds_clk));
+`else
+
+        ODDRX1F ddr0_clock (.D0(out_tmds_clk   [0] ), .D1(out_tmds_clk   [1] ), .Q(dvi_p[3]), .SCLK(bclk), .RST(0));
+        ODDRX1F ddr0_red   (.D0(out_tmds_red   [0] ), .D1(out_tmds_red   [1] ), .Q(dvi_p[2]), .SCLK(bclk), .RST(0));
+        ODDRX1F ddr0_green (.D0(out_tmds_green [0] ), .D1(out_tmds_green [1] ), .Q(dvi_p[1]), .SCLK(bclk), .RST(0));
+        ODDRX1F ddr0_blue  (.D0(out_tmds_blue  [0] ), .D1(out_tmds_blue  [1] ), .Q(dvi_p[0]), .SCLK(bclk), .RST(0));
+/*
+        assign dvi_p[3] = out_tmds_clk;
+        assign dvi_p[2] = out_tmds_red;
+        assign dvi_p[1] = out_tmds_green;
+        assign dvi_p[0] = out_tmds_blue;
+*/
+`endif
+
 
 	gpu_ddmi #(
 		.DDR_ENABLED(1)
