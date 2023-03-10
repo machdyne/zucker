@@ -515,10 +515,12 @@ void main() {
 
 	print("ZBL\n");
 
+#ifdef FPGA_ICE40
 	// clear SRAM
 	addr_ptr = MEM_SRAM;
 	mem_total = MEM_SRAM_SIZE;
 	cmd_memzero();
+#endif
 
 	addr_ptr = MEM_HRAM;
 	mem_total = MEM_HRAM_SIZE;

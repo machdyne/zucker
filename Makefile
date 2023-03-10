@@ -70,6 +70,8 @@ else ifeq ($(BOARD), schoko)
 	FLASH_OFFSET = -o
 endif
 
+FAMILY_UC = $(shell echo '$(FAMILY)' | tr '[:lower:]' '[:upper:]')
+
 zucker: zucker_pico
 
 ifeq ($(FAMILY), ice40)
@@ -96,7 +98,7 @@ zucker_ecp5_pico:
 
 
 firmware:
-	cd firmware && make
+	cd firmware && make BOARD=$(BOARD_UC) FAMILY=$(FAMILY_UC)
 
 prog: clean_firmware prog_soc
 flash: flash_soc flash_lix

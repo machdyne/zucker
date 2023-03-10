@@ -1,5 +1,5 @@
 PREFIX=/opt/riscv32i/bin/riscv32-unknown-elf-
-CFLAGS=
+CFLAGS=-DBOARD_$(BOARD) -DFPGA_$(FAMILY)
 ARCH=rv32i
 ABI=ilp32
 
@@ -26,5 +26,8 @@ firmware.bin: firmware.elf
 
 clean:
 	rm -f firmware.elf firmware.hex firmware.bin firmware.map firmware.asm
+
+dist_clean: clean
+	rm -f firmware_seed.hex
 
 .PHONY: firmware clean
