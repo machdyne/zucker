@@ -24,6 +24,13 @@ else ifeq ($(BOARD), eis)
 	PCF = eis.pcf
 	PROG = ldprog -is
 	FLASH = ldprog -if
+else ifeq ($(BOARD), kolibri)
+	FAMILY = ice40
+	DEVICE = hx4k
+	PACKAGE = bg121
+	PCF = kolibri.pcf
+	PROG = ldprog -Ks
+	FLASH = ldprog -Kf
 else ifeq ($(BOARD), bonbon)
 	FAMILY = ice40
 	DEVICE = up5k
@@ -137,5 +144,9 @@ clean_apps:
 
 clean_firmware:
 	cd firmware && make clean
+
+test_sdram:
+	iverilog -v -o output/test_sdram rtl/sdram.v test/tb_sdram.v
+	vvp output/test_sdram -lxt2
 
 .PHONY: clean_firmware firmware apps

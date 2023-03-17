@@ -42,6 +42,21 @@
 `define EN_VIDEO_VGA
 `define EN_VIDEO_DDMI
 
+`elsif KOLIBRI
+
+`define FPGA_ICE40
+`define OSC48
+`define SYSCLK50
+`define EN_UART0
+`define EN_RTC
+`define EN_CLK10KHZ
+`define EN_CSPI_FLASH
+`define EN_HRAM
+`define EN_GPU
+`define EN_GPU_TEXT
+`define EN_VIDEO
+`define EN_VIDEO_VGA
+
 `elsif BONBON
 
 `define FPGA_ICE40
