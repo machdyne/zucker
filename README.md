@@ -8,11 +8,13 @@ Zucker was created as a demo platform and a starting point for developing gatewa
 
 ## Supported Boards
 
-- [Riegel](https://machdyne.com/product/riegel-computer)
-- [Eis](https://machdyne.com/product/eis-computer)
-- [Bonbon](https://machdyne.com/product/bonbon-computer)
-- [Keks](https://machdyne.com/product/keks-game-console)
-- [Schoko](https://machdyne.com/product/schoko-computer)
+- [Riegel](https://machdyne.com/product/riegel-computer/)
+- [Eis](https://machdyne.com/product/eis-computer/)
+- [Bonbon](https://machdyne.com/product/bonbon-computer/)
+- [Keks](https://machdyne.com/product/keks-game-console/)
+- [Brot](https://machdyne.com/product/brot-fpga-board/)
+- [Kolibri](https://machdyne.com/product/kolibri-fpga-dongle/)
+- [Schoko](https://machdyne.com/product/schoko-computer/)
 
 ## Getting Started
 
