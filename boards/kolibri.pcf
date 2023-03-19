@@ -1,0 +1,70 @@
+# Kolibri V0
+# ----------
+
+set_io CLK_48	G1
+
+set_io LED_A	B11
+
+# PMOD_A
+set_io PMOD_A1  F10
+set_io PMOD_A2  G11
+set_io PMOD_A3  F9
+set_io PMOD_A4  H10
+set_io PMOD_A7  F11
+set_io PMOD_A8  G10
+set_io PMOD_A9  G9
+set_io PMOD_A10 K11
+
+# UART on PMODA
+#set_io UART0_RTS  F10
+#set_io UART0_RX   G11
+#set_io UART0_TX   F9
+#set_io UART0_CTS  H10
+
+# UART on RP2040 GPIO
+set_io UART0_RTS  C1
+set_io UART0_RX   B1
+set_io UART0_TX   B2
+set_io UART0_CTS  C2
+
+# --
+
+# RP2040
+set_io RP_GPIO0	B2
+set_io RP_GPIO1	B1
+set_io RP_GPIO2	C2
+set_io RP_GPIO3	C1
+set_io RP_GPIO4	D1
+set_io RP_GPIO5	D2
+set_io RP_GPIO6	E1
+set_io RP_GPIO7	F1
+
+# MMOD/SD SPI BUS
+set_io SPI_SS_FLASH  K10
+set_io SPI_SCK       L10
+set_io SPI_MISO      J9		# CSPI_SI
+set_io SPI_MOSI      K9		# CSPI_SO
+set_io SPI_SIO2		J11
+set_io SPI_SIO3		H11
+
+# OPI PSRAM
+set_io HRAM_ADQ0	B9
+set_io HRAM_ADQ1	A6
+set_io HRAM_ADQ2	B3
+set_io HRAM_ADQ3	A4
+set_io HRAM_ADQ4	B4
+set_io HRAM_ADQ5	A5
+set_io HRAM_ADQ6	B7
+set_io HRAM_ADQ7	B6
+set_io HRAM_DQ8	D7
+set_io HRAM_DQ9	C9
+set_io HRAM_DQ10	B8
+set_io HRAM_DQ11	A2
+set_io HRAM_DQ12	A10
+set_io HRAM_DQ13	A3
+set_io HRAM_DQ14	A9
+set_io HRAM_DQ15	A8
+set_io HRAM_DQS0	C7
+set_io HRAM_DQS1	A7
+set_io HRAM_CK		C8
+set_io HRAM_CE		A11
