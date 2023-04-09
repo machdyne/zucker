@@ -332,7 +332,7 @@ module sysctl #()
 		.REFERENCECLK(clk50mhz),
 		.PLLOUTCORE(clk125mhz),
 	);
-`elsif
+`else
 	// 48->50
 	SB_PLL40_PAD #(.FEEDBACK_PATH("SIMPLE"),
 		.PLLOUT_SELECT("GENCLK"),
@@ -899,13 +899,37 @@ module sysctl #()
 
    reg [2:0] sdram_state;
 
-	reg [31:0] sdram_addr;
-	wire [15:0] sdram_din;
-	reg [15:0] sdram_dout;
-	reg sdram_wstrb;
-	reg sdram_rstrb;
+	reg [24:0] sdram_addr;
+	reg [31:0] sdram_din;
+	wire [31:0] sdram_dout;
+	reg [3:0] sdram_wmask;
 	wire sdram_ready;
+	reg sdram_valid;
 
+	sdram #(
+		.SDRAM_CLK_FREQ(SYSCLK / 1_000_000)
+	) sdram_i (
+		.clk(clk),
+		.resetn(resetn),
+		.addr(sdram_addr),
+		.din(sdram_din),
+		.dout(sdram_dout),
+		.wmask(sdram_wmask),
+		.ready(sdram_ready),
+		.sdram_clk(sdram_clock),
+		.sdram_cke(sdram_cke),
+		.sdram_csn(sdram_cs_n),
+		.sdram_rasn(sdram_ras_n),
+		.sdram_casn(sdram_cas_n),
+		.sdram_wen(sdram_we_n),
+		.sdram_addr(sdram_a),
+		.sdram_ba(sdram_ba),
+		.sdram_dq(sdram_dq),
+		.sdram_dqm(sdram_dm),
+		.valid(sdram_valid)
+	);
+
+/*
 	sdram #() sdram_i
 	(
 		.clk(clk),
@@ -926,7 +950,8 @@ module sysctl #()
 		.ba(sdram_ba),
 		.dq(sdram_dq),
 		.dm(sdram_dm),
-);
+	);
+*/
 `endif
 
 // --
@@ -1056,10 +1081,6 @@ module sysctl #()
 		sram0_wrub <= 0;
 		sram1_wrlb <= 0;
 		sram1_wrub <= 0;
-`endif
-`ifdef EN_SDRAM
-		sdram_wstrb <= 0;
-		sdram_rstrb <= 0;
 `endif
 
 `ifdef EN_PS2
@@ -1219,6 +1240,7 @@ module sysctl #()
 `endif
 `ifdef EN_SDRAM
 			sdram_state <= 0;
+			sdram_valid <= 0;
 `endif
 `ifdef EN_SPRAM
 			spram_state <= 0;
@@ -1523,47 +1545,37 @@ module sysctl #()
 				((mem_addr & 32'hf000_0000) == 32'h4000_0000): begin
 
 					if (mem_wstrb) begin
-						(* parallel_case, full_case *)
-						case (sdram_state)
-							0: begin
-								sdram_addr <= {(mem_addr & 32'h0fff_ffff) >> 2, 1'b0};
-								sdram_dout <= mem_wdata[15:0];
-								sdram_wstrb <= mem_wstrb[0] || mem_wstrb[1];
-								sdram_state <= 1;
-							end
-							1: begin
-								sdram_addr <= {(mem_addr & 32'h0fff_ffff) >> 2, 1'b1};
-								sdram_dout <= mem_wdata[31:16];
-								sdram_wstrb <= mem_wstrb[2] || mem_wstrb[3];
-								sdram_state <= 0;
-								mem_ready <= 1;
-							end
-						endcase
+
+						if (sdram_state == 0 && !sdram_ready) begin
+							sdram_addr <= (mem_addr & 32'h0fff_ffff) >> 2;
+							sdram_din <= mem_wdata;
+							sdram_wmask <= mem_wstrb;
+							sdram_state <= 1;
+							sdram_valid <= 1;
+						end else if (sdram_state == 1 && sdram_ready) begin
+							sdram_wmask <= 0;
+							sdram_valid <= 0;
+							sdram_state <= 2;
+						end else if (sdram_state == 2) begin
+							mem_ready <= 1;
+							sdram_state <= 0;
+						end
+
 					end else begin
-						(* parallel_case, full_case *)
-						case (sdram_state)
-							0: begin
-								sdram_addr <= {(mem_addr & 32'h0fff_ffff) >> 2, 1'b0};
-								sdram_rstrb <= 1;
-								sdram_state <= 1;
-							end
-							1: begin
-								if (sdram_ready) begin
-									mem_rdata[15:0] <= sdram_din;
-									sdram_addr <=
-										{(mem_addr & 32'h0fff_ffff) >> 2, 1'b1};
-									sdram_rstrb <= 1;
-									sdram_state <= 2;
-								end
-							end
-							2: begin
-								if (sdram_ready) begin
-									mem_rdata[31:16] <= sdram_din;
-									sdram_state <= 0;
-									mem_ready <= 1;
-								end
-							end
-						endcase
+
+						if (sdram_state == 0 && !sdram_ready) begin
+							sdram_addr <= (mem_addr & 32'h0fff_ffff) >> 2;
+							sdram_valid <= 1;
+							sdram_state <= 1;
+						end else if (sdram_state == 1 && sdram_ready) begin
+							mem_rdata <= sdram_dout;
+							sdram_valid <= 0;
+							sdram_state <= 2;
+						end else if (sdram_state == 2) begin
+							mem_ready <= 1;
+							sdram_state <= 0;
+						end
+
 					end
 
 				end

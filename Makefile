@@ -1,5 +1,5 @@
 RTL_PICO=rtl/sysctl_pico.v rtl/uart.v \
-	rtl/ps2.v rtl/spislave.v rtl/rpmem.v rtl/rpint.v \
+	rtl/ps2.v rtl/spislave.v rtl/rpmem.v rtl/rpint.v rtl/sdram.v \
 	rtl/spiflashro.v rtl/hram.v rtl/spram.v rtl/qqspi.v rtl/clkdiv.v \
 	rtl/gpu_video.v rtl/gpu_text.v rtl/gpu_vram.v rtl/gpu_font_rom.v \
 	rtl/gpu_ddmi.v rtl/tmds_encoder.v \
@@ -9,6 +9,10 @@ RTL_PICO=rtl/sysctl_pico.v rtl/uart.v \
 
 BOARD_LC = $(shell echo '$(BOARD)' | tr '[:upper:]' '[:lower:]')
 BOARD_UC = $(shell echo '$(BOARD)' | tr '[:lower:]' '[:upper:]')
+
+ifndef CABLE
+	CABLE = dirtyJtag
+endif
 
 ifeq ($(BOARD_LC), riegel)
 	FAMILY = ice40
@@ -72,8 +76,8 @@ else ifeq ($(BOARD), schoko)
 	DEVICE = 45k
 	PACKAGE = CABGA256
 	LPF = schoko_v1.lpf
-	PROG = openFPGALoader -c dirtyJtag
-	FLASH = openFPGALoader -c dirtyJtag -f
+	PROG = openFPGALoader -c $(CABLE)
+	FLASH = openFPGALoader -c $(CABLE) -f
 	FLASH_OFFSET = -o
 endif
 
@@ -121,7 +125,7 @@ soc:
 		-f firmware/firmware_seed.hex \
 		-t firmware/firmware.hex
 	ecppack -v --compress --freq 2.4 output/$(BOARD_LC)/soc_final.config \
-		--bit output/$(BOARD_LC)/soc.bit
+		--bit output/$(BOARD_LC)/soc.bin
 endif
 
 prog_soc: firmware soc
@@ -137,7 +141,7 @@ apps:
 	cd apps && make
 
 clean: clean_firmware clean_apps
-	rm -f output/*
+	rm -rf output/*
 
 clean_apps:
 	cd apps && make clean

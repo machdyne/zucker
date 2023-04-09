@@ -39,7 +39,6 @@
 `define EN_GPU_FB
 `define EN_GPU_FB_PIXEL_DOUBLING
 `define EN_VIDEO
-`define EN_VIDEO_VGA
 `define EN_VIDEO_DDMI
 
 `elsif KOLIBRI
@@ -107,7 +106,7 @@
 `define OSC48
 `define SYSCLK50
 `define VCLK25
-//`define EN_SDRAM
+`define EN_SDRAM
 `define EN_BSRAM32
 `define EN_UART0
 `define EN_RTC

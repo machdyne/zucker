@@ -138,10 +138,10 @@ The default configuration assumes that a USB-UART PMOD is connected to PMODB (or
 
 | Begin | End | Size | Description |
 | ----- | --- | ---- | ----------- |
-| ``00000000`` | ``000017ff`` | 6144 | BRAM (ZBL firmware) |
+| ``00000000`` | ``000017ff`` | 5120 - 6144 | BRAM (ZBL firmware) |
 | ``10000000`` | ``100007cf`` | 2000 | BRAM (video text memory) |
-| ``20000000`` | ``2007ffff`` | 512KB | SRAM (video graphic memory) |
-| ``40000000`` | ``43ffffff`` | 32MB-64MB | HRAM or QQSPI (main memory) |
+| ``20000000`` | ``2fffffff`` | 38.4KB - 512KB | SRAM/SPRAM/BSRAM (framebuffer) |
+| ``40000000`` | ``4fffffff`` | 8MB - 64MB | HRAM/QQSPI/SDRAM (main memory) |
 | ``80000000`` | ``8fffffff`` | - | MMOD (read-only flash memory) |
 | ``a0000000`` | ``afffffff`` | - | Cartridge memory (Keks PMODA) |
 | ``e0000000`` | ``efffffff`` | - | RPMEM |
@@ -152,6 +152,10 @@ The default configuration assumes that a USB-UART PMOD is connected to PMODB (or
 | ``f0002000`` | ``f0002000`` | 1 | SD card SPI register |
 | ``f0003000`` | ``f0003000`` | 1 | PS/2 data register |
 | ``f0003004`` | ``f0003004`` | 1 | PS/2 control register |
+| ``f0004000`` | ``f0004000`` | 1 | UART1 data register |
+| ``f0004004`` | ``f0004004`` | 1 | UART1 control register |
+| ``f0005000`` | ``f0005000`` | 1 | left gamepad |
+| ``f0005004`` | ``f0005004`` | 1 | right gamepad |
 
 ### Video Graphics
 
