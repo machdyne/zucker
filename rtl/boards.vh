@@ -108,6 +108,7 @@
 `define VCLK25
 `define EN_SDRAM
 `define EN_BSRAM32
+`define EN_CSPI_FLASH
 `define EN_UART0
 `define EN_RTC
 `define EN_CLK10KHZ

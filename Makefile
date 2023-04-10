@@ -134,8 +134,13 @@ prog_soc: firmware soc
 flash_soc: firmware soc
 	$(FLASH) output/$(BOARD_LC)/soc.bin
 
+ifeq ($(FAMILY), ice40)
 flash_lix: apps
-	$(FLASH) apps/lix/lix.bin $(FLASH_OFFSET) 50000
+	$(FLASH) $(FLASH_OFFSET) 50000 apps/lix/lix.bin
+else
+flash_lix: apps
+	$(FLASH) $(FLASH_OFFSET) 327680 apps/lix/lix.bin
+endif
 
 apps:
 	cd apps && make
