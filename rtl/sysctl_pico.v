@@ -929,29 +929,6 @@ module sysctl #()
 		.valid(sdram_valid)
 	);
 
-/*
-	sdram #() sdram_i
-	(
-		.clk(clk),
-		.resetn(resetn),
-		.addr(sdram_addr),
-		.rdata(sdram_din),
-		.wdata(sdram_dout),
-		.wstrb(sdram_wstrb),
-		.rstrb(sdram_rstrb),
-		.ready(sdram_ready),
-		.sdclk(sdram_clock),
-		.cke(sdram_cke),
-		.cs_n(sdram_cs_n),
-		.ras_n(sdram_ras_n),
-		.cas_n(sdram_cas_n),
-		.we_n(sdram_we_n),
-		.a(sdram_a),
-		.ba(sdram_ba),
-		.dq(sdram_dq),
-		.dm(sdram_dm),
-	);
-*/
 `endif
 
 // --
@@ -1547,7 +1524,7 @@ module sysctl #()
 					if (mem_wstrb) begin
 
 						if (sdram_state == 0 && !sdram_ready) begin
-							sdram_addr <= (mem_addr & 32'h0fff_ffff) >> 2;
+							sdram_addr <= { (mem_addr & 32'h0fff_ffff) >> 2, 2'b00 };
 							sdram_din <= mem_wdata;
 							sdram_wmask <= mem_wstrb;
 							sdram_state <= 1;
@@ -1556,7 +1533,7 @@ module sysctl #()
 							sdram_wmask <= 0;
 							sdram_valid <= 0;
 							sdram_state <= 2;
-						end else if (sdram_state == 2) begin
+						end else if (sdram_state == 2 && !sdram_ready) begin
 							mem_ready <= 1;
 							sdram_state <= 0;
 						end
@@ -1564,14 +1541,14 @@ module sysctl #()
 					end else begin
 
 						if (sdram_state == 0 && !sdram_ready) begin
-							sdram_addr <= (mem_addr & 32'h0fff_ffff) >> 2;
+							sdram_addr <= { (mem_addr & 32'h0fff_ffff) >> 2, 2'b00 };
 							sdram_valid <= 1;
 							sdram_state <= 1;
 						end else if (sdram_state == 1 && sdram_ready) begin
 							mem_rdata <= sdram_dout;
 							sdram_valid <= 0;
 							sdram_state <= 2;
-						end else if (sdram_state == 2) begin
+						end else if (sdram_state == 2 && !sdram_ready) begin
 							mem_ready <= 1;
 							sdram_state <= 0;
 						end
