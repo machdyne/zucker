@@ -40,7 +40,7 @@ else ifeq ($(BOARD), bonbon)
 	DEVICE = up5k
 	PACKAGE = sg48
 	PCF = bonbon.pcf
-	PROG = ldprog -b
+	PROG = ldprog -bs
 	FLASH = ldprog -bf
 else ifeq ($(BOARD), keks)
 	FAMILY = ice40
@@ -136,7 +136,7 @@ flash_soc: firmware soc
 
 ifeq ($(FAMILY), ice40)
 flash_lix: apps
-	$(FLASH) $(FLASH_OFFSET) 50000 apps/lix/lix.bin
+	$(FLASH) $(FLASH_OFFSET) apps/lix/lix.bin 50000
 else
 flash_lix: apps
 	$(FLASH) $(FLASH_OFFSET) 327680 apps/lix/lix.bin
