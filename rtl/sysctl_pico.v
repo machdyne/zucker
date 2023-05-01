@@ -300,7 +300,7 @@ module sysctl #()
 		.PLLOUTCORE(clk),
 		.LOCK(pll_locked),
 	);
-	assign clk126mhz = CLK_RP;
+	wire clk126mhz = CLK_RP;
 `endif
 
 `ifdef FPGA_ICE40
@@ -1392,60 +1392,26 @@ module sysctl #()
 
 					if (mem_wstrb) begin
 
-						// XXX TODO FIX: shouldn't have to read then write here,
-						// but code execution isn't working otherwise,
-						// must be doing something really dumb somewhere
-
 						if (hram_state == 0 && !hram_ready) begin
  
-							hram_addr <= (mem_addr & 32'h0fff_ffff);
-							hram_wstrb <= 0;
-							hram_valid <= 1;
-							hram_state <= 1;
-
-						end else if (hram_state == 1 && hram_ready) begin
-
-							hram_wdata <= hram_rdata;
-							hram_valid <= 0;
-							hram_state <= 2;
-
-						end else if (hram_state == 2 && !hram_ready) begin
-
-							if (mem_wstrb[0]) hram_wdata[7:0] <= mem_wdata[7:0];
-							if (mem_wstrb[1]) hram_wdata[15:8] <= mem_wdata[15:8];
-							if (mem_wstrb[2]) hram_wdata[23:16] <= mem_wdata[23:16];
-							if (mem_wstrb[3]) hram_wdata[31:24] <= mem_wdata[31:24];
-
-							hram_wstrb <= 4'b1111;
-							hram_valid <= 1;
-							hram_state <= 3;
-
-						end else if (hram_state == 3 && hram_ready) begin
-
-							hram_valid <= 0;
-							hram_state <= 4;
-
-						end else if (hram_state == 4 && !hram_ready) begin
-
-							hram_state <= 0;
-							mem_ready <= 1;
-
-						end
-/*
-						if (hram_state == 0 && !hram_ready) begin
 							hram_addr <= { (mem_addr & 32'h0fff_ffff) >> 2, 2'b00 };
 							hram_wdata <= mem_wdata;
 							hram_wstrb <= mem_wstrb;
 							hram_valid <= 1;
 							hram_state <= 1;
+
 						end else if (hram_state == 1 && hram_ready) begin
+
 							hram_valid <= 0;
 							hram_state <= 2;
+
 						end else if (hram_state == 2 && !hram_ready) begin
+
 							hram_state <= 0;
 							mem_ready <= 1;
+
 						end
-*/
+
 					end else begin
 
 						if (hram_state == 0 && !hram_ready) begin

@@ -112,10 +112,10 @@ module hram (
 		end else if (xfer_edges) begin
 
 			if (state == STATE_END) begin
-				if (wstrb[3] && xfer_edges == 4) dqs_do <= 2'b10;
-				else if (wstrb[2] && xfer_edges == 3) dqs_do <= 2'b10;
-				else if (wstrb[1] && xfer_edges == 2) dqs_do <= 2'b10;
-				else if (wstrb[0] && xfer_edges == 1) dqs_do <= 2'b10;
+				if (wstrb[3] && xfer_edges == 4) dqs_do <= 2'b00;
+				else if (wstrb[2] && xfer_edges == 3) dqs_do <= 2'b00;
+				else if (wstrb[1] && xfer_edges == 2) dqs_do <= 2'b00;
+				else if (wstrb[0] && xfer_edges == 1) dqs_do <= 2'b00;
 				else dqs_do <= 2'b11;
 			end
 
