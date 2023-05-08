@@ -154,8 +154,8 @@ clean_apps:
 clean_firmware:
 	cd firmware && make clean
 
-test_sdram:
-	iverilog -v -o output/test_sdram rtl/sdram.v test/tb_sdram.v
-	vvp output/test_sdram -lxt2
+test_hram:
+	iverilog -DTESTBENCH -v -o output/test_hram rtl/hram.v test/tb_hram.v
+	vvp output/test_hram -lxt2
 
 .PHONY: clean_firmware firmware apps
