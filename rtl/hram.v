@@ -77,12 +77,14 @@ module hram (
 		STATE_ADDR			= 4'd5,
 		STATE_WAIT			= 4'd6,
 		STATE_XFER			= 4'd7,
-		STATE_END			= 4'd8;
+		STATE_END			= 4'd8,
+		STATE_WAIT_DQS_LOW		= 4'd9;
 
 	reg [31:0] buffer;
 	reg [5:0] xfer_edges;
 	reg [1:0] xfer_ctr;
 	reg xfer_rdy;
+	reg[1:0] wait_ctr;
 
 	always @(posedge clk) begin
 
@@ -180,9 +182,21 @@ module hram (
 				buffer <= { 6'b0, addr[25:0] };
 				xfer_edges <= 4;
 				xfer_ctr <= 0;
-				state <= STATE_WAIT;
+				if (write) 
+					state <= STATE_WAIT;
+				else begin
+					state <= STATE_WAIT_DQS_LOW;
+					wait_ctr <= 0;
+				end
 				dqs_c <= 0;
 				xfer_rdy <= 0;
+			end
+
+			STATE_WAIT_DQS_LOW: begin
+				if (ck) ck <= 0; else ck <= 1;
+				wait_ctr <= wait_ctr + 1;
+				if (wait_ctr == 2)
+					state <= STATE_WAIT;
 			end
 
 			STATE_WAIT: begin
