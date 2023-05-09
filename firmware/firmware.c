@@ -515,7 +515,7 @@ void main() {
 
 	print("ZBL\n");
 
-#ifdef FPGA_ICE40
+#if defined FPGA_ICE40 && !BOARD_KOLIBRI
 	// clear SRAM
 	addr_ptr = MEM_SRAM;
 	mem_total = MEM_SRAM_SIZE;

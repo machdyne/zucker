@@ -51,10 +51,6 @@
 `define EN_CLK10KHZ
 `define EN_CSPI_FLASH
 `define EN_HRAM
-`define EN_GPU
-`define EN_GPU_TEXT
-`define EN_VIDEO
-`define EN_VIDEO_VGA
 
 `elsif BONBON
 

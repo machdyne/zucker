@@ -1291,6 +1291,10 @@ module sysctl #()
 					end
 
 				end
+`else
+				((mem_addr & 32'hf000_0000) == 32'h1000_0000): begin
+						mem_ready <= 1;
+				end
 `endif
 
 `ifdef EN_SRAM16
