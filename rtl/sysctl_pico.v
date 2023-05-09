@@ -320,18 +320,6 @@ module sysctl #()
 		.PLLOUTCORE(clk50mhz),
 		.LOCK(pll_locked),
 	);
-	SB_PLL40_CORE #(.FEEDBACK_PATH("SIMPLE"),
-		.PLLOUT_SELECT("GENCLK"),
-		.DIVR(4'b0010),
-		.DIVF(7'b0110001),
-		.DIVQ(3'b100),
-		.FILTER_RANGE(3'b001),
-	) pll_clk1 (
-		.RESETB(1'b1),
-		.BYPASS(1'b0),
-		.REFERENCECLK(clk50mhz),
-		.PLLOUTCORE(clk125mhz),
-	);
 `else
 	// 48->50
 	SB_PLL40_PAD #(.FEEDBACK_PATH("SIMPLE"),
