@@ -21,6 +21,10 @@
 #define reg_gamepad_l (*(volatile uint32_t*)0xf0005000)
 #define reg_gamepad_r (*(volatile uint32_t*)0xf0005004)
 
+#define reg_gpu_blit_src (*(volatile uint32_t*)0xf0008000)
+#define reg_gpu_blit_dst (*(volatile uint32_t*)0xf0008004)
+#define reg_gpu_blit_ctl (*(volatile uint32_t*)0xf0008008)
+
 #define UART_CTRL_TXBUSY 0x02
 #define UART_CTRL_DR 0x01
 
@@ -342,6 +346,21 @@ void cmd_info() {
 	print_hex(tmp32, 8);
 	print("\n");
 
+	print("blit src: ");
+	tmp32 = reg_gpu_blit_src;
+	print_hex(tmp32, 8);
+	print("\n");
+
+	print("blit dst: ");
+	tmp32 = reg_gpu_blit_dst;
+	print_hex(tmp32, 8);
+	print("\n");
+
+	print("blit ctl: ");
+	tmp32 = reg_gpu_blit_ctl;
+	print_hex(tmp32, 8);
+	print("\n");
+
 }
 
 void ps2_wait() {
@@ -502,6 +521,12 @@ void test_rpmem() {
 	print("RPMEM VAL: ");
 	print_hex(v, 8);
 	print("\n");
+}
+
+void gpu_blit(uint32_t src, uint32_t dst, uint8_t width, uint8_t rows, uint8_t stride) {
+	reg_gpu_blit_src = src;
+	reg_gpu_blit_dst = dst;
+	reg_gpu_blit_ctl = 0xff000000 | (stride << 16) | (rows << 8) | width;
 }
 
 void main() {

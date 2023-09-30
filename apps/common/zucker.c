@@ -248,3 +248,11 @@ void _exit(int exit_status)
 	asm volatile ("jr a0");
 	__builtin_unreachable();
 }
+
+// ---
+
+void gpu_blit(uint32_t src, uint32_t dst, uint8_t width, uint8_t rows, uint8_t stride) {
+	reg_gpu_blit_src = src;
+	reg_gpu_blit_dst = dst;
+	reg_gpu_blit_ctl = 0xff000000 | (stride << 16) | (rows << 8) | width;
+}

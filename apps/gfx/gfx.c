@@ -2,8 +2,34 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "tileset.h"
+
 #define WIDTH 320
 #define HEIGHT 240
+
+#ifdef BAREMETAL
+
+#define reg_gpu_blit_src (*(volatile uint32_t*)0xf0008000)
+#define reg_gpu_blit_dst (*(volatile uint32_t*)0xf0008004)
+#define reg_gpu_blit_ctl (*(volatile uint32_t*)0xf0008008)
+
+void gpu_blit(uint32_t src, uint32_t dst, uint8_t width, uint8_t rows, uint8_t stride);
+
+void gpu_blit(uint32_t src, uint32_t dst, uint8_t width, uint8_t rows, uint8_t stride) {
+	while ((reg_gpu_blit_ctl & 0x80000000) != 0);
+	reg_gpu_blit_src = src;
+	reg_gpu_blit_dst = dst;
+	reg_gpu_blit_ctl = 0xff000000 | (stride << 16) | (rows << 8) | width;
+}
+
+void _exit(int exit_status)
+{
+   asm volatile ("li a0, 0x00000000");
+   asm volatile ("jr a0");
+   __builtin_unreachable();
+}
+
+#endif
 
 typedef struct color_t {
 
@@ -14,6 +40,8 @@ typedef struct color_t {
 } color_t;
 
 void draw_pixel(uint16_t x, uint16_t y, color_t color);
+void draw_sprite(uint8_t idx, uint16_t x, uint16_t y);
+
 void draw_line(int x0, int y0, int x1, int y1, color_t color);
 
 int main(void) {
@@ -32,26 +60,44 @@ int main(void) {
 	blue.green = 0x0;
 	blue.blue = 0xff;
 
-	void *addr = (void *)0x20000000;
+	void *addr = (void *)0x20009600;
 	memset(addr, 0, 320*240/2);
 
-	int px, py, c = 0;
+	memcpy(addr, (void *)tileset_bin, sizeof(tileset_bin));
 
-	while (1) {
+	int px, py, idx;
+
+	for (int i = 0; i < 1000; i++) {
 
 		px = (rand() % WIDTH) - 5;
 		py = (rand() % HEIGHT) - 5;
-		c = rand() % 3;
+		idx = rand() % 60;
 
+		draw_sprite(idx, px, py);
+
+/*
 		for (int y = py; y < py+5; y++) {
 			for (int x = px; x < px+5; x++) {
 				draw_pixel(x, y, c == 0 ? blue : c == 1 ? red : green);
 			}
 		}
+*/
 
 	}
 
-	return(0);
+	exit(0);
+
+}
+
+void draw_sprite(uint8_t idx, uint16_t x, uint16_t y) {
+
+   // width = 2 bytes = 4 pixels
+   // rows = 5
+   // stride = 80 = 320 / 2 pixels per byte / 2 bytes per word
+   // src = end_of_sram_addr / 2 bytes per word
+   // dst = stride * screen row + (screen col / 2 bytes per word)
+   gpu_blit(0x00004b00 + (idx * 80) + (idx * 16),
+		0x00000000 + y * 80 + (x / 2), 16, 32, 80);
 
 }
 

@@ -13,6 +13,10 @@
 #define reg_ps2_data (*(volatile uint8_t*)0xf0003000)
 #define reg_ps2_ctrl (*(volatile uint8_t*)0xf0003004)
 
+#define reg_gpu_blit_src (*(volatile uint32_t*)0xf0008000)
+#define reg_gpu_blit_dst (*(volatile uint32_t*)0xf0008004)
+#define reg_gpu_blit_ctl (*(volatile uint32_t*)0xf0008008)
+
 #define UART_CTRL_TXBUSY 0x02
 #define UART_CTRL_DR 0x01
 
@@ -26,6 +30,7 @@ int getch(void);
 void readline(char *buf, int maxlen);
 void echo(void);
 void noecho(void);
+void gpu_blit(uint32_t src, uint32_t dst, uint8_t width, uint8_t rows, uint8_t stride);
 
 #define VT100_CURSOR_UP       "\e[A"
 #define VT100_CURSOR_DOWN     "\e[B"

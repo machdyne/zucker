@@ -27,8 +27,14 @@ module sysctl #()
 `ifdef OSC100
 	input CLK_100,
 `endif
+`ifdef OSC50
+	input CLK_50,
+`endif
 `ifdef OSC48
 	input CLK_48,
+`endif
+`ifdef OSC10
+	input CLK_10,
 `endif
 `ifdef OSCRP
 	input CLK_RP,
@@ -41,10 +47,12 @@ module sysctl #()
 	input UART0_TX,
 	output reg UART0_CTS,
 
+`ifdef EN_SPI
 	inout SPI_MISO,
 	inout SPI_MOSI,
 `ifndef FPGA_ECP5
 	output SPI_SCK,
+`endif
 `endif
 
 `ifdef EN_CSPI_FLASH
@@ -279,6 +287,49 @@ module sysctl #()
 	assign clk25mhz = ctr25mhz[0];
 `endif
 
+`ifdef FPGA_GATEMATE
+
+   wire clk270, clk180, clk90, usr_ref_out;
+   wire usr_pll_lock_stdy;
+
+   CC_PLL #(
+`ifdef OSC10
+      .REF_CLK("10.0"),    // reference input in MHz
+`elsif OSC50
+      .REF_CLK("50.0"),    // reference input in MHz
+`endif
+`ifdef SYSCLK25
+      .OUT_CLK("25.0"),   // pll output frequency in MHz
+`elsif SYSCLK50
+      .OUT_CLK("50.0"),   // pll output frequency in MHz
+`endif
+      .PERF_MD("ECONOMY"), // LOWPOWER, ECONOMY, SPEED
+      .LOW_JITTER(1),      // 0: disable, 1: enable low jitter mode
+      .CI_FILTER_CONST(2), // optional CI filter constant
+      .CP_FILTER_CONST(4)  // optional CP filter constant
+   ) pll_inst (
+`ifdef OSC10
+      .CLK_REF(CLK_10),
+`elsif OSC50
+      .CLK_REF(CLK_50),
+`endif
+		.CLK_FEEDBACK(1'b0), .USR_CLK_REF(1'b0),
+      .USR_LOCKED_STDY_RST(1'b0),
+		.USR_PLL_LOCKED_STDY(usr_pll_lock_stdy),
+		.USR_PLL_LOCKED(pll_locked),
+      .CLK270(clk270),
+		.CLK180(clk180),
+		.CLK90(clk90),
+		.CLK0(clk),
+		.CLK_REF_OUT(usr_ref_out)
+   );
+
+`ifdef SYSCLK25
+	assign clk25mhz = clk;
+`endif
+
+`endif
+
 `ifdef BONBON
 	wire clk48mhz;
    SB_HFOSC hfosc_i (
@@ -428,11 +479,15 @@ module sysctl #()
 
 	always @(posedge clk10khz) begin
 
-		clock_fms <= clock_fms + 1;
-
-		if (clock_fms == 4999) begin
-			clock_fms <= 0;
-			clock_secs <= clock_secs + 1;
+		if (!resetn) begin
+			clock_fms = 0;
+			clock_secs = 0;
+		end else begin
+			clock_fms <= clock_fms + 1;
+			if (clock_fms == 4999) begin
+				clock_fms <= 0;
+				clock_secs <= clock_secs + 1;
+			end
 		end
 
 	end
@@ -516,9 +571,15 @@ module sysctl #()
 	reg [31:0] bram [0:BRAM_WORDS-1];   
 	wire [13:0] bsram_word = mem_addr[14:2];
 	wire [10:0] bram_word = mem_addr[14:2];
+`ifdef FPGA_GATEMATE
+	initial $readmemh("firmware/firmware.hex", bram);
+`else
 	initial $readmemh("firmware/firmware_seed.hex", bram);
+`endif
 
 	// SPI
+
+`ifdef EN_SPI
 
 `ifdef FPGA_ECP5
 	wire SPI_SCK;
@@ -540,13 +601,14 @@ module sysctl #()
 		spi_is_rpmem ? cspi_rpmem_sck :
 		spi_is_sd ? sd_sck : 1'bz;
 
+
 `ifdef EN_SDCARD
 	reg sd_ss;
 	reg sd_mosi;
 	wire sd_miso = SD_MISO;
 	reg sd_sck;
 	assign SD_SS = spi_is_sd ? sd_ss : 1'b1;
-`elsif
+`else
 	assign spi_is_sd = 1'b0;
 `endif
 
@@ -556,7 +618,7 @@ module sysctl #()
 	wire sd_miso = SPI_MISO;
 	wire sd_sck;
 	assign SPI_SS_SD = spi_is_sd ? sd_ss : 1'b1;
-`elsif
+`else
 	assign spi_is_sd = 1'b0;
 `endif
 
@@ -630,6 +692,8 @@ module sysctl #()
 `elsif
 	assign spi_is_rpmem = 1'b0;
 `endif
+
+`endif // EN_SPI
 
 `ifdef EN_CART
 
@@ -871,12 +935,12 @@ module sysctl #()
 		.ready(qqspi_ready),
 		.valid(qqspi_valid),
 		.write(qqspi_wstrb),
-		.ss(qqspi_ss),
+		.ss(QQSPI_SS),
 		.sck(QQSPI_SCK),
 		.mosi(QQSPI_MOSI),
 		.miso(QQSPI_MISO),
-		.sio2(QQSPI_IO2),
-		.sio3(QQSPI_IO3),
+		.sio2(QQSPI_SIO2),
+		.sio3(QQSPI_SIO3),
 		.cs({QQSPI_CS1, QQSPI_CS0})
 	);
 
@@ -919,6 +983,7 @@ module sysctl #()
 
 `endif
 
+
 // --
 
 	wire gpu_lock;
@@ -934,6 +999,23 @@ module sysctl #()
 `endif
 
 `ifdef EN_GPU_FB
+`ifdef EN_GPU_BLIT
+	reg gpu_blit_en;
+	reg gpu_blit_done;
+`ifdef EN_GPU_BLIT16
+	reg [15:0] gpu_blit_data;
+`elsif EN_GPU_BLIT32
+	reg [31:0] gpu_blit_data;
+`endif
+	reg [7:0] gpu_blit_width;
+	reg [7:0] gpu_blit_rows;
+	reg [7:0] gpu_blit_stride;
+	reg [7:0] gpu_blit_ctr;
+	reg [31:0] gpu_blit_src;
+	reg [31:0] gpu_blit_dst;
+	reg [3:0] gpu_blit_state;
+`endif
+
 `ifdef EN_GPU_FB_PIXEL_DOUBLING
 	reg [319:0] gpu_hline_r;
 	reg [319:0] gpu_hline_g;
@@ -1063,6 +1145,7 @@ module sysctl #()
 `endif
 
 `ifdef EN_GPU_FB
+
 		if (gpu_refill) begin
 `ifdef EN_SRAM16
 `ifdef EN_GPU_FB_PIXEL_DOUBLING
@@ -1144,7 +1227,71 @@ module sysctl #()
 `endif
 			gpu_refill_words <= gpu_refill_words - 1;
 
+`ifdef EN_GPU_BLIT
+
+		end else if (gpu_blit_en) begin
+
+			if (gpu_blit_state == 0) begin
+
+				sram_addr <= gpu_blit_src;
+				sram_wrlb <= 1'b0;
+				sram_wrub <= 1'b0;
+
+				gpu_blit_state <= 1;
+				gpu_blit_done <= 0;
+
+			end else if (gpu_blit_state == 1) begin
+
+				gpu_blit_data <= sram_din;
+				gpu_blit_state <= 2;
+
+			end else if (gpu_blit_state == 2) begin
+	
+				sram_addr <= gpu_blit_dst;
+				sram_dout <= gpu_blit_data;
+				sram_wrlb <= 1'b1;
+				sram_wrub <= 1'b1;
+
+`ifdef EN_GPU_BLIT16
+				gpu_blit_ctr <= gpu_blit_ctr + 2;
+`elsif EN_GPU_BLIT32
+				gpu_blit_ctr <= gpu_blit_ctr + 4;
+`endif
+
+				if (gpu_blit_ctr == gpu_blit_width) begin
+
+					gpu_blit_src <= gpu_blit_src +
+						gpu_blit_stride - (gpu_blit_width >> 1);
+					gpu_blit_dst <= gpu_blit_dst +
+						gpu_blit_stride - (gpu_blit_width >> 1);
+
+					gpu_blit_ctr <= 0;
+					gpu_blit_rows <= gpu_blit_rows - 1;
+
+					if (gpu_blit_rows == 1) begin
+						gpu_blit_done <= 1;
+						gpu_blit_ctr <= 0;
+						gpu_blit_en <= 0;
+					end
+
+				end else begin
+`ifdef EN_GPU_BLIT16
+					gpu_blit_src <= gpu_blit_src + 1;
+					gpu_blit_dst <= gpu_blit_dst + 1;
+`elsif EN_GPU_BLIT32
+					gpu_blit_src <= gpu_blit_src + 2;
+					gpu_blit_dst <= gpu_blit_dst + 2;
+`endif
+				end
+
+				gpu_blit_state <= 0;
+
+			end
+
+`endif
+
 		end
+
 `endif
 
 		if (uart0_received) begin
@@ -1222,6 +1369,12 @@ module sysctl #()
 			vram_state <= 0;
 `endif
 
+`ifdef EN_GPU_BLIT
+		gpu_blit_en <= 0;
+		gpu_blit_state <= 0;
+		gpu_blit_ctr <= 0;
+`endif
+
 		end else if (mem_valid && !mem_ready) begin
 
 			(* parallel_case *)
@@ -1281,7 +1434,7 @@ module sysctl #()
 				end
 `else
 				((mem_addr & 32'hf000_0000) == 32'h1000_0000): begin
-						mem_ready <= 1;
+					mem_ready <= 1;
 				end
 `endif
 
@@ -1763,6 +1916,43 @@ module sysctl #()
 							end
 							mem_ready <= 1;
 						end
+`endif
+
+`ifdef EN_GPU_BLIT
+						16'h8000: begin
+							if (!mem_wstrb) begin
+								mem_rdata <= gpu_blit_src;
+							end else begin
+								gpu_blit_src <= mem_wdata;
+							end
+							mem_ready <= 1;
+						end
+						16'h8004: begin
+							if (!mem_wstrb) begin
+								mem_rdata <= gpu_blit_dst;
+							end else begin
+								gpu_blit_dst <= mem_wdata;
+							end
+							mem_ready <= 1;
+						end
+						16'h8008: begin
+							if (!mem_wstrb) begin
+								mem_rdata = {
+									gpu_blit_en,
+									7'b0,
+									gpu_blit_stride,
+									gpu_blit_rows,
+									gpu_blit_width
+								};
+							end else begin
+								gpu_blit_width <= mem_wdata[7:0];
+								gpu_blit_rows <= mem_wdata[15:8];
+								gpu_blit_stride <= mem_wdata[23:16];
+								gpu_blit_en <= mem_wdata[31];
+							end
+							mem_ready <= 1;
+						end
+
 `endif
 
 						default: begin

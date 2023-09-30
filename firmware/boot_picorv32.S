@@ -50,9 +50,6 @@ start:
 	lui sp, %hi(0x42000000)
 	addi sp, sp, %lo(0x42000000)
 
-	/* jump to LIX */
+	/* jump to LIX or baremetal app */
 	li a0, 0x40000000
 	jr a0
-
-	/* reboot if LIX returns */
-	j start

@@ -49,6 +49,13 @@ else ifeq ($(BOARD), keks)
 	PCF = keks.pcf
 	PROG = ldprog -ks
 	FLASH = ldprog -kf
+else ifeq ($(BOARD), kuchen)
+	FAMILY = ice40
+	DEVICE = hx8k
+	PACKAGE = ct256
+	PCF = kuchen.pcf
+	PROG = ldprog -ks
+	FLASH = ldprog -kf
 else ifeq ($(BOARD), brot)
 	FAMILY = ice40
 	DEVICE = up5k
@@ -79,6 +86,26 @@ else ifeq ($(BOARD), schoko)
 	PROG = openFPGALoader -c $(CABLE)
 	FLASH = openFPGALoader -c $(CABLE) -f
 	FLASH_OFFSET = -o
+else ifeq ($(BOARD), kolsch_v0)
+	FAMILY = gatemate
+	DEVICE = ccgma1
+	SYNTH = ~/work/fpga/gatemate/cc-toolchain-linux-2023-09-25/bin/yosys/yosys
+	#SYNTH = ~/work/fpga/gatemate/eval/cc-toolchain-linux/bin/yosys/yosys
+	#PR = ~/work/fpga/gatemate/cc-toolchain-linux-2023-09-25/bin/p_r/p_r
+	PR = ~/work/fpga/gatemate/cc-toolchain-linux-old2/bin/p_r/p_r
+	PRFLAGS += -uCIO -ccf boards/kolsch_v0.ccf -cCP -crc +uCIO
+else ifeq ($(BOARD), kolsch_v1)
+	FAMILY = gatemate
+	DEVICE = ccgma1
+	SYNTH = ~/work/fpga/gatemate/eval/cc-toolchain-linux/bin/yosys/yosys
+	PR = ~/work/fpga/gatemate/cc-toolchain-linux-old2/bin/p_r/p_r
+	PRFLAGS += -uCIO -ccf boards/kolsch_v1.ccf -cCP -crc +uCIO
+else ifeq ($(BOARD), cceval)
+	FAMILY = gatemate
+	DEVICE = ccgma1
+	SYNTH = ~/work/fpga/gatemate/eval/cc-toolchain-linux/bin/yosys/yosys
+	PR = ~/work/fpga/gatemate/cc-toolchain-linux-old2/bin/p_r/p_r
+	PRFLAGS += -uCIO -ccf boards/cceval.ccf -cCP -crc +uCIO
 endif
 
 FAMILY_UC = $(shell echo '$(FAMILY)' | tr '[:lower:]' '[:upper:]')
@@ -87,8 +114,10 @@ zucker: zucker_pico
 
 ifeq ($(FAMILY), ice40)
 zucker_pico: zucker_ice40_pico
-else
+else ifeq ($(FAMILY), ecp5)
 zucker_pico: zucker_ecp5_pico
+else ifeq ($(FAMILY), gatemate)
+zucker_pico: zucker_gatemate_pico
 endif
 
 zucker_ice40_pico:
@@ -107,6 +136,11 @@ zucker_ecp5_pico:
 		--json output/$(BOARD_LC)/soc.json \
 		--textcfg output/$(BOARD_LC)/soc.config
 
+zucker_gatemate_pico:
+	mkdir -p output/$(BOARD_LC)
+	$(SYNTH) -D$(BOARD_UC) -q -l synth.log -p \
+		"read -sv $(RTL_PICO); synth_gatemate -top sysctl -nomx8 -vlog output/$(BOARD_LC)/soc_synth.v"
+	$(PR) -i output/$(BOARD_LC)/soc_synth.v -o output/$(BOARD_LC)/soc $(PRFLAGS)
 
 firmware:
 	cd firmware && make BOARD=$(BOARD_UC) FAMILY=$(FAMILY_UC)

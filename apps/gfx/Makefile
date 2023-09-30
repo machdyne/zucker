@@ -7,7 +7,10 @@ LDSCRIPT = ../common/riscv-psram-app.ld
 
 OBJS = gfx.o zucker.o
 
-gfx: gfx.elf gfx.bin
+gfx: tileset.h gfx.elf gfx.bin
+
+tileset.h:
+	xxd -i tileset.bin tileset.h
 
 zucker.o:
 	$(CC) $(CFLAGS) -c ../common/zucker.c -o zucker.o

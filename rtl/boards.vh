@@ -5,6 +5,7 @@
 `define SYSCLK50
 `define VCLK25
 `define EN_UART0
+`define EN_SPI
 `define EN_RTC
 `define EN_PS2
 `define EN_CLK10KHZ
@@ -14,9 +15,13 @@
 `define EN_HRAM
 `define EN_GPU
 `define EN_GPU_TEXT
+`define EN_GPU_FB
+`define EN_GPU_FB_PIXEL_DOUBLING
+`define EN_GPU_BLIT
+`define EN_GPU_BLIT16
 `define EN_VIDEO
 `define EN_VIDEO_VGA
-`define EN_VIDEO_DDMI
+//`define EN_VIDEO_DDMI
 //`define EN_KABELLOS
 
 `elsif EIS
@@ -26,6 +31,7 @@
 `define SYSCLK50
 `define VCLK25
 `define EN_UART0
+`define EN_SPI
 `define EN_RTC
 `define EN_RPDEBUG
 `define EN_MUSLI_KBD
@@ -47,6 +53,7 @@
 `define OSC48
 `define SYSCLK50
 `define EN_UART0
+`define EN_SPI
 `define EN_RTC
 `define EN_CLK10KHZ
 `define EN_CSPI_FLASH
@@ -59,6 +66,7 @@
 `define SYSCLK20
 `define EN_LOWBRAM
 `define EN_UART0
+`define EN_SPI
 `define EN_RTC
 `define EN_SDCARD
 `define EN_CLK10KHZ
@@ -78,6 +86,7 @@
 `define SYSCLK50
 `define VCLK25
 `define EN_UART0
+`define EN_SPI
 //`define EN_RTC
 `define EN_CLK10KHZ
 //`define EN_CSPI_RPMEM
@@ -96,6 +105,24 @@
 //`define EN_VIDEO_COMPOSITE
 `define EN_AUDIO
 
+`elsif KUCHEN
+
+`define FPGA_ICE40
+`define OSC48
+`define SYSCLK50
+`define VCLK25
+`define EN_UART0
+`define EN_SPI
+//`define EN_RTC
+`define EN_CLK10KHZ
+`define EN_GPU
+`define EN_GPU_TEXT
+`define EN_GPU_FB
+`define EN_GPU_FB_PIXEL_DOUBLING
+`define EN_VIDEO
+`define EN_VIDEO_VGA
+`define EN_VIDEO_DDMI
+
 `elsif SCHOKO
 
 `define FPGA_ECP5
@@ -106,6 +133,7 @@
 `define EN_BSRAM32
 `define EN_CSPI_FLASH
 `define EN_UART0
+`define EN_SPI
 `define EN_RTC
 `define EN_CLK10KHZ
 `define EN_GPU
@@ -115,5 +143,36 @@
 `define EN_VIDEO
 `define EN_VIDEO_VGA
 `define EN_VIDEO_DDMI
+
+`elsif KOLSCH_V0
+
+`define FPGA_GATEMATE
+`define OSC50
+`define SYSCLK25
+`define VCLK25
+`define EN_UART0
+`define EN_RTC
+`define EN_CLK10KHZ
+
+`elsif KOLSCH_V1
+
+`define FPGA_GATEMATE
+`define OSC50
+`define SYSCLK25
+`define VCLK25
+`define EN_UART0
+`define EN_RTC
+`define EN_CLK10KHZ
+
+`elsif CCEVAL
+
+`define FPGA_GATEMATE
+`define OSC10
+`define SYSCLK25
+`define VCLK25
+`define EN_UART0
+`define EN_RTC
+`define EN_CLK10KHZ
+`define EN_QQSPI
 
 `endif

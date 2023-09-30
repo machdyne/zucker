@@ -2,12 +2,15 @@
 PREFIX = /opt/riscv32i/bin/riscv32-unknown-elf-
 ARCH = rv32i
 CC = $(PREFIX)gcc
-CFLAGS = --std=gnu99 -Os -MD -Wall -march=$(ARCH)
+CFLAGS = --std=gnu99 -Os -MD -Wall -march=$(ARCH) -DBAREMETAL
 LDSCRIPT = ../common/riscv-psram-lix.ld
 
 OBJS = gfx.o
 
-gfx: gfx.elf gfx.bin
+gfx: tileset.h gfx.elf gfx.bin
+
+tileset.h:
+	xxd -i tileset.bin tileset.h
 
 gfx.o:
 	$(CC) $(CFLAGS) -c gfx.c -o gfx.o
