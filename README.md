@@ -11,6 +11,7 @@ Zucker was originally created as a demo platform and a starting point for develo
 - [Riegel](https://machdyne.com/product/riegel-computer/)
 - [Eis](https://machdyne.com/product/eis-computer/)
 - [Bonbon](https://machdyne.com/product/bonbon-computer/)
+- [Kuchen](https://machdyne.com/product/kuchen-computer/)
 - [Keks](https://machdyne.com/product/keks-game-console/)
 - [Brot](https://machdyne.com/product/brot-fpga-board/)
 - [Kolibri](https://machdyne.com/product/kolibri-fpga-dongle/)
