@@ -10,6 +10,8 @@
 
 `ifdef SYSCLK50
 localparam SYSCLK = 50_000_000;
+`elsif SYSCLK48
+localparam SYSCLK = 48_000_000;
 `elsif SYSCLK36
 localparam SYSCLK = 36_000_000;
 `elsif SYSCLK25
@@ -23,6 +25,15 @@ localparam UART1_BAUDRATE = 115200;
 
 module sysctl #()
 (
+
+	output pmodb1,
+	output pmodb2,
+	output pmodb3,
+	output pmodb4,
+	output pmodb7,
+	output pmodb8,
+	output pmodb9,
+	output pmodb10,
 
 `ifdef OSC100
 	input CLK_100,
@@ -70,8 +81,8 @@ module sysctl #()
 
 `ifdef EN_SDCARD
 	output SD_SS,
-	inout SD_MISO,
-	inout SD_MOSI,
+	input SD_MISO,
+	output SD_MOSI,
 	output SD_SCK,
 `endif
 
@@ -295,21 +306,31 @@ module sysctl #()
    CC_PLL #(
 `ifdef OSC10
       .REF_CLK("10.0"),    // reference input in MHz
+`elsif OSC48
+      .REF_CLK("48.0"),    // reference input in MHz
 `elsif OSC50
       .REF_CLK("50.0"),    // reference input in MHz
 `endif
-`ifdef SYSCLK25
+`ifdef SYSCLK20
+      .OUT_CLK("20.0"),   // pll output frequency in MHz
+`elsif SYSCLK25
       .OUT_CLK("25.0"),   // pll output frequency in MHz
+`elsif SYSCLK36
+      .OUT_CLK("36.0"),   // pll output frequency in MHz
+`elsif SYSCLK48
+      .OUT_CLK("48.0"),   // pll output frequency in MHz
 `elsif SYSCLK50
       .OUT_CLK("50.0"),   // pll output frequency in MHz
 `endif
-      .PERF_MD("ECONOMY"), // LOWPOWER, ECONOMY, SPEED
+      .PERF_MD("SPEED"), // LOWPOWER, ECONOMY, SPEED
       .LOW_JITTER(1),      // 0: disable, 1: enable low jitter mode
       .CI_FILTER_CONST(2), // optional CI filter constant
       .CP_FILTER_CONST(4)  // optional CP filter constant
    ) pll_inst (
 `ifdef OSC10
       .CLK_REF(CLK_10),
+`elsif OSC48
+      .CLK_REF(CLK_48),
 `elsif OSC50
       .CLK_REF(CLK_50),
 `endif
@@ -601,22 +622,19 @@ module sysctl #()
 		spi_is_rpmem ? cspi_rpmem_sck :
 		spi_is_sd ? sd_sck : 1'bz;
 
-
 `ifdef EN_SDCARD
 	reg sd_ss;
+	reg sd_sck;
 	reg sd_mosi;
 	wire sd_miso = SD_MISO;
-	reg sd_sck;
-	assign SD_SS = spi_is_sd ? sd_ss : 1'b1;
-`else
-	assign spi_is_sd = 1'b0;
-`endif
-
-`ifdef EN_CSPI_SDCARD
+	assign SD_SS = sd_ss;
+	assign SD_SCK = sd_sck;
+	assign SD_MOSI = sd_mosi;
+`elsif EN_CSPI_SDCARD
 	reg sd_ss;
+	reg sd_sck;
 	reg sd_mosi;
 	wire sd_miso = SPI_MISO;
-	wire sd_sck;
 	assign SPI_SS_SD = spi_is_sd ? sd_ss : 1'b1;
 `else
 	assign spi_is_sd = 1'b0;
@@ -1805,7 +1823,7 @@ module sysctl #()
 								{sd_ss, sd_sck, sd_mosi} <= mem_wdata[3:1];
 							else
 								mem_rdata[7:0] <= {
-									4'b0, spi_ss_sd, sd_sck, sd_mosi, sd_miso
+									4'b0, sd_ss, sd_sck, sd_mosi, sd_miso
 								};
 							mem_ready <= 1;
 						end
@@ -1970,6 +1988,15 @@ module sysctl #()
 
 	// CPU
 	// ---
+
+	assign pmodb1 = cpu_trap;
+	assign pmodb2 = resetn;
+	assign pmodb3 = |mem_wstrb;
+	assign pmodb4 = mem_ready;
+	assign pmodb7 = mem_addr[7];
+	assign pmodb8 = mem_addr[8];
+	assign pmodb9 = mem_addr[9];
+	assign pmodb10 = mem_addr[10];
 
 	wire cpu_trap;
 	wire [31:0] cpu_irq;
