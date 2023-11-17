@@ -86,6 +86,14 @@ else ifeq ($(BOARD), schoko)
 	PROG = openFPGALoader -c $(CABLE)
 	FLASH = openFPGALoader -c $(CABLE) -f
 	FLASH_OFFSET = -o
+else ifeq ($(BOARD), konfekt)
+	FAMILY = ecp5
+	DEVICE = 12k
+	PACKAGE = CABGA256
+	LPF = konfekt_v0.lpf
+	PROG = openFPGALoader -c $(CABLE)
+	FLASH = openFPGALoader -c $(CABLE) -f
+	FLASH_OFFSET = -o
 else ifeq ($(BOARD), kolsch_v0)
 	FAMILY = gatemate
 	DEVICE = ccgma1
@@ -143,7 +151,7 @@ zucker_ecp5_pico:
 		"synth_ecp5 -top sysctl -json output/$(BOARD_LC)/soc.json" $(RTL_PICO)
 	nextpnr-ecp5 --$(DEVICE) --package $(PACKAGE) --lpf boards/$(LPF) \
 		--json output/$(BOARD_LC)/soc.json \
-		--textcfg output/$(BOARD_LC)/soc.config
+		--textcfg output/$(BOARD_LC)/soc.config #--lpf-allow-unconstrained
 
 zucker_gatemate_pico:
 	mkdir -p output/$(BOARD_LC)

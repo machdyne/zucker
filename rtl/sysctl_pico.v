@@ -26,15 +26,6 @@ localparam UART1_BAUDRATE = 115200;
 module sysctl #()
 (
 
-	output pmodb1,
-	output pmodb2,
-	output pmodb3,
-	output pmodb4,
-	output pmodb7,
-	output pmodb8,
-	output pmodb9,
-	output pmodb10,
-
 `ifdef OSC100
 	input CLK_100,
 `endif
@@ -53,10 +44,12 @@ module sysctl #()
 
 	output reg LED_A,
 
-	input UART0_RTS,
 	output UART0_RX,
 	input UART0_TX,
+`ifdef UART0_HW_FLOW
+	input UART0_RTS,
 	output reg UART0_CTS,
+`endif
 
 `ifdef EN_SPI
 	inout SPI_MISO,
@@ -1043,7 +1036,16 @@ module sysctl #()
 	reg [639:0] gpu_hline_g;
 	reg [639:0] gpu_hline_b;
 `endif
+
+`ifdef EN_SDRAM32
+	wire [31:0] sdram32_addr;
+	assign gpu_lock = (gpu_refill_words && sdram_state == 0);
+	assign sdram32_addr = (((mem_addr & 32'hf000_0000) == 32'h2000_0000) ?
+		(mem_addr | 32'h01f00000) : mem_addr);
+`else
 	assign gpu_lock = (gpu_refill_words && sram_state == 0);
+`endif
+
 `else
 	assign gpu_lock = 0;
 `endif
@@ -1186,6 +1188,13 @@ module sysctl #()
 			gpu_refill_words <= 80;
 `endif
 `endif
+`ifdef EN_SDRAM32
+`ifdef EN_GPU_FB_PIXEL_DOUBLING
+			gpu_refill_words <= 40;
+`else
+			gpu_refill_words <= 80;
+`endif
+`endif
 		end
 
 		if (gpu_lock) begin
@@ -1204,6 +1213,8 @@ module sysctl #()
 
 			gpu_hline_b <= { gpu_hline_b,
 				sram_din[8], sram_din[12], sram_din[0], sram_din[4] };
+
+			gpu_refill_words <= gpu_refill_words - 1;
 `endif
 
 `ifdef EN_SRAM32
@@ -1223,6 +1234,8 @@ module sysctl #()
 			gpu_hline_b <= { gpu_hline_b,
 				sram_din[24], sram_din[28], sram_din[16], sram_din[20],
 				sram_din[8], sram_din[12], sram_din[0], sram_din[4] };
+
+			gpu_refill_words <= gpu_refill_words - 1;
 `endif
 
 `ifdef EN_BSRAM32
@@ -1242,8 +1255,37 @@ module sysctl #()
 			gpu_hline_b <= { gpu_hline_b,
 				sram_din[24], sram_din[28], sram_din[16], sram_din[20],
 				sram_din[8], sram_din[12], sram_din[0], sram_din[4] };
-`endif
+
 			gpu_refill_words <= gpu_refill_words - 1;
+`endif
+
+`ifdef EN_SDRAM32
+			if (!sdram_ready || !sdram_valid) begin
+`ifdef EN_GPU_FB_PIXEL_DOUBLING
+				sdram_addr <= 32'h01f00000 + (gpu_hy << 5) + (gpu_hy << 3) + gpu_refill_words;
+`else
+				sdram_addr <= 32'h01f00000 + (gpu_y << 6) + (gpu_y << 4) + gpu_refill_words;
+`endif
+				sdram_valid <= 1;
+			end
+
+			if (sdram_ready) begin
+				gpu_hline_r <= { gpu_hline_r,
+					sdram_din[26], sdram_din[30], sdram_din[18], sdram_din[22],
+					sdram_din[10], sdram_din[14], sdram_din[2], sdram_din[6] };
+
+				gpu_hline_g <= { gpu_hline_g,
+					sdram_din[25], sdram_din[29], sdram_din[17], sdram_din[21],
+					sdram_din[9], sdram_din[13], sdram_din[1], sdram_din[5] };
+
+				gpu_hline_b <= { gpu_hline_b,
+					sdram_din[24], sdram_din[28], sdram_din[16], sdram_din[20],
+					sdram_din[8], sdram_din[12], sdram_din[0], sdram_din[4] };
+
+				gpu_refill_words <= gpu_refill_words - 1;
+				sdram_valid <= 0;
+			end
+`endif
 
 `ifdef EN_GPU_BLIT
 
@@ -1314,12 +1356,20 @@ module sysctl #()
 
 		if (uart0_received) begin
 			uart0_dr <= 1;
+`ifdef UART0_HW_FLOW
 			UART0_CTS <= 1;
+`endif
 		end
 
+`ifdef UART0_HW_FLOW
 		if (!uart0_transmit && !uart0_is_transmitting && !UART0_RTS) begin
 			uart0_txbusy <= 0;
 		end
+`else
+		if (!uart0_transmit && !uart0_is_transmitting) begin
+			uart0_txbusy <= 0;
+		end
+`endif
 
 `ifdef EN_KABELLOS
 		if (uart1_received) begin
@@ -1336,8 +1386,9 @@ module sysctl #()
 
 			uart0_dr <= 0;
 			uart0_txbusy <= 0;
+`ifdef UART0_HW_FLOW
 			UART0_CTS <= 0;
-
+`endif
 `ifdef EN_KABELLOS
 			uart1_dr <= 0;
 			uart1_txbusy <= 0;
@@ -1648,6 +1699,47 @@ module sysctl #()
 `endif
 
 `ifdef EN_SDRAM
+`ifdef EN_SDRAM32
+				((((mem_addr & 32'hf000_0000) == 32'h2000_0000) ||
+					((mem_addr & 32'hf000_0000) == 32'h4000_0000)) &&
+						!gpu_lock): begin
+
+					if (mem_wstrb) begin
+
+						if (sdram_state == 0 && !sdram_ready) begin
+							sdram_addr <= { (sdram32_addr & 32'h0fff_ffff) >> 2, 2'b00 };
+							sdram_din <= mem_wdata;
+							sdram_wmask <= mem_wstrb;
+							sdram_state <= 1;
+							sdram_valid <= 1;
+						end else if (sdram_state == 1 && sdram_ready) begin
+							sdram_wmask <= 0;
+							sdram_valid <= 0;
+							sdram_state <= 2;
+						end else if (sdram_state == 2 && !sdram_ready) begin
+							mem_ready <= 1;
+							sdram_state <= 0;
+						end
+
+					end else begin
+
+						if (sdram_state == 0 && !sdram_ready) begin
+							sdram_addr <= { (sdram32_addr & 32'h0fff_ffff) >> 2, 2'b00 };
+							sdram_valid <= 1;
+							sdram_state <= 1;
+						end else if (sdram_state == 1 && sdram_ready) begin
+							mem_rdata <= sdram_dout;
+							sdram_valid <= 0;
+							sdram_state <= 2;
+						end else if (sdram_state == 2 && !sdram_ready) begin
+							mem_ready <= 1;
+							sdram_state <= 0;
+						end
+
+					end
+
+				end
+`else
 				((mem_addr & 32'hf000_0000) == 32'h4000_0000): begin
 
 					if (mem_wstrb) begin
@@ -1685,6 +1777,7 @@ module sysctl #()
 					end
 
 				end
+`endif
 `endif
 
 `ifdef EN_CSPI_RPMEM
@@ -1791,7 +1884,9 @@ module sysctl #()
 							end else if (!mem_wstrb) begin
 								mem_rdata[7:0] <= uart0_rx_byte;
 								uart0_dr <= 0;
+`ifdef UART0_HW_FLOW
 								UART0_CTS <= 0;
+`endif
 								mem_ready <= 1;
 							end
 						end
@@ -1989,6 +2084,7 @@ module sysctl #()
 	// CPU
 	// ---
 
+/*
 	assign pmodb1 = cpu_trap;
 	assign pmodb2 = resetn;
 	assign pmodb3 = |mem_wstrb;
@@ -1997,6 +2093,7 @@ module sysctl #()
 	assign pmodb8 = mem_addr[8];
 	assign pmodb9 = mem_addr[9];
 	assign pmodb10 = mem_addr[10];
+*/
 
 	wire cpu_trap;
 	wire [31:0] cpu_irq;
