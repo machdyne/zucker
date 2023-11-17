@@ -16,6 +16,7 @@ Zucker was originally created as a demo platform and a starting point for develo
 - [Brot](https://machdyne.com/product/brot-fpga-board/)
 - [Kolibri](https://machdyne.com/product/kolibri-fpga-dongle/)
 - [Schoko](https://machdyne.com/product/schoko-computer/)
+- [Konfekt](https://machdyne.com/product/konfekt-computer/)
 
 ## Getting Started
 
