@@ -8,7 +8,15 @@
 
 `include "boards.vh"
 
-`ifdef SYSCLK50
+`ifdef SYSCLK100
+localparam SYSCLK = 100_000_000;
+`elsif SYSCLK80
+localparam SYSCLK = 80_000_000;
+`elsif SYSCLK72
+localparam SYSCLK = 72_000_000;
+`elsif SYSCLK64
+localparam SYSCLK = 64_000_000;
+`elsif SYSCLK50
 localparam SYSCLK = 50_000_000;
 `elsif SYSCLK48
 localparam SYSCLK = 48_000_000;
@@ -583,8 +591,8 @@ module sysctl #()
 	localparam BRAM_WORDS = 1536;
 `endif
 	reg [31:0] bram [0:BRAM_WORDS-1];   
-	wire [13:0] bsram_word = mem_addr[14:2];
-	wire [10:0] bram_word = mem_addr[14:2];
+	wire [11:0] bsram_word = mem_addr[14:2];
+	wire [11:0] bram_word = mem_addr[14:2];
 `ifdef FPGA_GATEMATE
 	initial $readmemh("firmware/firmware.hex", bram);
 `else
@@ -731,11 +739,22 @@ module sysctl #()
 `endif
 
 `ifdef EN_BSRAM32
-	reg [31:0] bsram [0:9599];	// 320*240*4/32
-   reg [17:0] sram_addr;
+
+   reg [1:0] sram_state;
+   reg [13:0] sram_addr;
+   reg [3:0] sram_wstrb;
+   reg [31:0] sram_dout;
    wire [31:0] sram_din;
-	reg sram_state;
-	assign sram_din = bsram[sram_addr >> 2];
+
+	bsram #() bsram_i (
+		.clk(clk),
+		.resetn(resetn),
+		.addr(sram_addr),
+		.rdata(sram_din),
+		.wdata(sram_dout),
+		.wstrb(sram_wstrb)
+	);
+
 `endif
 
 `ifdef EN_SRAM16
@@ -1139,6 +1158,9 @@ module sysctl #()
 
 		mem_ready <= 0;
 
+`ifdef EN_BSRAM32
+		sram_wstrb <= 0;
+`endif
 `ifdef EN_SRAM16
 		sram_wrlb <= 0;
 		sram_wrub <= 0;
@@ -1294,9 +1316,12 @@ module sysctl #()
 			if (gpu_blit_state == 0) begin
 
 				sram_addr <= gpu_blit_src;
+`ifdef EN_GPU_BLIT16
 				sram_wrlb <= 1'b0;
 				sram_wrub <= 1'b0;
-
+`elsif EN_GPU_BLIT32
+				sram_wstrb <= 4'b0000;
+`endif
 				gpu_blit_state <= 1;
 				gpu_blit_done <= 0;
 
@@ -1309,8 +1334,12 @@ module sysctl #()
 	
 				sram_addr <= gpu_blit_dst;
 				sram_dout <= gpu_blit_data;
+`ifdef EN_GPU_BLIT16
 				sram_wrlb <= 1'b1;
 				sram_wrub <= 1'b1;
+`elsif EN_GPU_BLIT32
+				sram_wstrb <= 4'b1111;
+`endif
 
 `ifdef EN_GPU_BLIT16
 				gpu_blit_ctr <= gpu_blit_ctr + 2;
@@ -1465,19 +1494,30 @@ module sysctl #()
 `ifdef EN_BSRAM32
 				// BLOCK RAM AS 32-bit SRAM
 				(((mem_addr & 32'hf000_0000) == 32'h2000_0000) && !gpu_lock): begin
-			
-					sram_state <= 1;
 
-					if (mem_wstrb[0]) bsram[bsram_word][7:0] <= mem_wdata[7:0];
-					if (mem_wstrb[1]) bsram[bsram_word][15:8] <= mem_wdata[15:8];
-					if (mem_wstrb[2]) bsram[bsram_word][23:16] <= mem_wdata[23:16];
-					if (mem_wstrb[3]) bsram[bsram_word][31:24] <= mem_wdata[31:24];
+					if (mem_wstrb) begin
 
-					mem_rdata <= bsram[bsram_word];
+						if (sram_state == 0) begin
+							sram_addr <= (mem_addr & 32'h0fff_ffff) >> 2;
+							sram_dout <= mem_wdata;
+							sram_wstrb <= mem_wstrb;
+							sram_state <= 1;
+						end else if (sram_state == 1) begin
+							mem_ready <= 1;
+							sram_state <= 0;
+						end
 
-					if (sram_state == 1) begin
-						sram_state <= 0;
-						mem_ready <= 1;
+					end else begin
+
+						if (sram_state == 0) begin
+							sram_addr <= (mem_addr & 32'h0fff_ffff) >> 2;
+							sram_state <= 1;
+						end else if (sram_state == 1) begin
+							mem_rdata <= sram_din;
+							mem_ready <= 1;
+							sram_state <= 0;
+						end
+
 					end
 
 				end

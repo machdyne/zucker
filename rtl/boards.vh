@@ -1,7 +1,7 @@
 // UNIVERSAL CONFIG
 // ----------------
 
-`define UART0_HW_FLOW
+//`define UART0_HW_FLOW
 
 // BOARD CONFIG
 // ------------
@@ -167,6 +167,7 @@
 `define EN_BSRAM32
 `define EN_CSPI_FLASH
 `define EN_UART0
+`undef UART0_HW_FLOW
 `define EN_SPI
 `define EN_RTC
 `define EN_CLK10KHZ

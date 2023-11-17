@@ -46,7 +46,7 @@ start:
 	/* call firmware main */
 	jal ra, main
 
-	/* set stack pointer to end of HRAM */
+	/* set stack pointer to end of main memory */
 	lui sp, %hi(0x42000000)
 	addi sp, sp, %lo(0x42000000)
 
