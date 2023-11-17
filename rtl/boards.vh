@@ -1,7 +1,7 @@
 // UNIVERSAL CONFIG
 // ----------------
 
-//`define UART0_HW_FLOW
+`define UART0_HW_FLOW
 
 // BOARD CONFIG
 // ------------
