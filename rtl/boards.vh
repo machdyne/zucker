@@ -1,7 +1,7 @@
 // UNIVERSAL CONFIG
 // ----------------
 
-//`define UART0_HW_FLOW
+`define UART0_HW_FLOW
 
 // BOARD CONFIG
 // ------------
@@ -151,10 +151,11 @@
 `define EN_GPU_TEXT
 `define EN_GPU_FB
 `define EN_GPU_FB_PIXEL_DOUBLING
+`define EN_GPU_BLIT
+`define EN_GPU_BLIT32
 `define EN_VIDEO
 `define EN_VIDEO_VGA
 `define EN_VIDEO_DDMI
-
 
 `elsif KONFEKT
 
