@@ -1,5 +1,5 @@
 RTL_PICO=rtl/sysctl_pico.v rtl/uart.v \
-	rtl/ps2.v rtl/spislave.v rtl/rpmem.v rtl/rpint.v rtl/sdram.v \
+	rtl/ps2.v rtl/spislave.v rtl/rpmem.v rtl/rpint.v rtl/sdram.v rtl/bsram.v \
 	rtl/spiflashro.v rtl/hram.v rtl/spram.v rtl/qqspi.v rtl/clkdiv.v \
 	rtl/gpu_video.v rtl/gpu_text.v rtl/gpu_vram.v rtl/gpu_font_rom.v \
 	rtl/gpu_ddmi.v rtl/tmds_encoder.v \
@@ -49,11 +49,18 @@ else ifeq ($(BOARD), keks)
 	PCF = keks.pcf
 	PROG = ldprog -ks
 	FLASH = ldprog -kf
+else ifeq ($(BOARD), kuchen_v0)
+	FAMILY = ice40
+	DEVICE = hx8k
+	PACKAGE = ct256
+	PCF = kuchen_v0.pcf
+	PROG = ldprog -s
+	FLASH = ldprog -f
 else ifeq ($(BOARD), kuchen)
 	FAMILY = ice40
 	DEVICE = hx8k
 	PACKAGE = ct256
-	PCF = kuchen.pcf
+	PCF = kuchen_v1.pcf
 	PROG = ldprog -s
 	FLASH = ldprog -f
 else ifeq ($(BOARD), brot)
@@ -92,7 +99,7 @@ else ifeq ($(BOARD), konfekt)
 	PACKAGE = CABGA256
 	LPF = konfekt_v0.lpf
 	PROG = openFPGALoader -c $(CABLE)
-	FLASH = openFPGALoader -c $(CABLE) -f
+	FLASH = openFPGALoader -v -c $(CABLE) -f
 	FLASH_OFFSET = -o
 else ifeq ($(BOARD), kolsch_v0)
 	FAMILY = gatemate
