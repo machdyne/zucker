@@ -22,8 +22,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_STRLEN 1024
-
 #ifdef CURSES
 #include <ncurses.h>
 #define VT100_CURSOR_UP       "\e[A"
@@ -46,6 +44,7 @@
 #ifdef LIX
 #include "../common/zucker.h"
 #include "include/te.h"
+#include "include/fs.h"
 #endif
 
 #define ROWS 24
@@ -57,16 +56,19 @@
 #define STATE_NONE 0
 #define STATE_ESC0 1
 #define STATE_ESC1 2
+#define STATE_CMD 3
 
 void te_init(void);
 void te_redraw(void);
-void te_status(void);
+void te_status(char *notice);
 int te_yield(void);
 
 void te_insert(int l, int pos, char c);
+void te_insert_line(int line);
 void te_delete(int line, int pos);
 void te_dump(void);
-
+int te_load(void);
+int te_save(void);
 
 typedef struct te_lines_t {
 	struct te_line_t *first;
@@ -85,12 +87,20 @@ int state = STATE_NONE;
 int te_curs_x, te_curs_y;
 int f_lines;
 
+char *te_filename;
 te_lines_t *lines;
 
-
 void te_edit(char *filename) {
+	te_filename = filename;
 	te_init();
-	while(te_yield());
+	if (!te_load()) {
+		printf("unable to load file %s\n", te_filename);
+		exit(0);
+	} else {
+		te_redraw();
+		te_status("");
+		while(te_yield());
+	}
 }
 
 void te_init(void) {
@@ -115,21 +125,21 @@ void te_init(void) {
 	noecho();
 #endif
 
-	printf(VT100_CURSOR_HOME);
-	printf(VT100_ERASE_SCREEN);
-	fflush(stdout);
+//	printf(VT100_CURSOR_HOME);
+//	printf(VT100_ERASE_SCREEN);
+//	fflush(stdout);
 
 	te_curs_x = 0;
 	te_curs_y = 0;
 
-	te_redraw();
+//	te_redraw();
 
 }
 
-void te_status(void) {
+void te_status(char *notice) {
 	printf(VT100_CURSOR_MOVE_TO, 24, 0);
 	printf(VT100_ERASE_LINE);
-	printf("te x%i y%i", te_curs_x, te_curs_y);
+	printf("te %s l%i s%i x%i y%i %s", te_filename, f_lines, state, te_curs_x, te_curs_y, notice);
 	printf(VT100_CURSOR_MOVE_TO, te_curs_y + 1, te_curs_x + 1);
 	fflush(stdout);
 }
@@ -140,10 +150,6 @@ int te_yield(void) {
 	if (c == EOF || c == 0) return 1;
 
 	switch(c) {
-
-		case('Q'):
-			return(0);
-			break;
 
 		case(CH_ESC):
 			state = STATE_ESC0;
@@ -158,7 +164,13 @@ int te_yield(void) {
 				state = STATE_ESC1;
 			break;
 
+		case(':'):
+			if (state == STATE_ESC0)
+				state = STATE_CMD;
+			break;
+
 		default:
+
 			if (state == STATE_ESC1) {
 				if (c == 'A') { te_curs_y--; printf(VT100_CURSOR_UP); }
 				if (c == 'B') { te_curs_y++; printf(VT100_CURSOR_DOWN); } 
@@ -166,10 +178,21 @@ int te_yield(void) {
 				if (c == 'D') { te_curs_x--; printf(VT100_CURSOR_LEFT); }
 				fflush(stdout);
 				state = STATE_NONE;
+			}
+
+			else if (state == STATE_CMD) {
+				printf("%c", c);
+				if (c == 'q') { return(0); }
+				if (c == 'w') {
+					if (te_save()) te_status("SAVED"); else te_status("FAILED");
+				}
+				if (c == 'd') { te_dump(); te_status("DEBUG"); }
+				state = STATE_NONE;
+				return(1);
 				break;
 			}
 
-			if (state == STATE_NONE) {
+			else if (state == STATE_NONE) {
 				if (c == CH_BS || c == CH_DEL) {
 					te_curs_x--;
 					if (te_curs_x > 0)
@@ -189,6 +212,7 @@ int te_yield(void) {
 					te_curs_x++;
 				}
 			}
+
 			break;
 
 	}
@@ -198,7 +222,7 @@ int te_yield(void) {
 	if (te_curs_y < 0) te_curs_y = 0;
 	if (te_curs_y > ROWS - 1) te_curs_y = ROWS - 1;
 
-	te_status();
+	te_status("");
 
 	return 1;
 
@@ -311,7 +335,102 @@ void te_delete(int line, int pos) {
 
 }
 
-// dump line
+// load file
+int te_load(void) {
+
+	int fs = 0;
+	char *buf = NULL;
+
+	if (te_filename != NULL) {
+#ifdef LIX
+		fs = fs_size(te_filename);
+		buf = fs_mallocfile(te_filename);
+#else
+		FILE *f = fopen(te_filename, "rb");
+		if (f == NULL) return 0;
+		fseek(f, 0, SEEK_END);
+		fs = ftell(f);
+		fseek(f, 0, SEEK_SET);
+		buf = malloc(fs);
+		fread(buf, fs, 1, f);
+		fclose(f);
+#endif
+	}
+
+	int pos = 0;
+	char c;
+
+	for (int i = 0; i < fs; i++) {
+
+		c = buf[i];
+
+		if (c == '\r') continue;
+
+		if (c == '\n') {
+			pos = 0;
+			te_insert_line(f_lines - 1);
+			++f_lines;
+			continue;
+		}
+
+		te_insert(f_lines - 1, pos, c);
+		++pos;
+
+	}
+
+	free(buf);
+
+	return 1;
+
+}
+
+// write file
+int te_save(void) {
+
+	int ts = 0;
+
+	char *buf = malloc(1);
+	char *p;
+	
+	te_line_t *ptr = lines->first;
+
+	while (ptr) {
+
+		int ls = strlen(ptr->text);
+		p = realloc(buf, ts + ls + 2);
+		if (p == NULL) return 0;
+		buf = p;
+		memcpy(buf + ts, ptr->text, ls);
+		ptr = ptr->next;
+		ts += ls + 1;
+		buf[ts - 1] = '\n';
+
+	};
+
+	buf[ts] = '\0';
+
+	//printf("saving %i bytes\r\n", ts);
+	//printf("--\r\n");
+	//printf("%s", buf);
+	//printf("--\r\n");
+
+#ifdef LIX
+	int w = fs_write_file(te_filename, buf, ts);
+	if (w != ts) return(0);
+#else
+	FILE *f = fopen(te_filename, "wb");
+	if (f == NULL) return(0);
+	int w = fwrite(buf, ts, 1, f);
+	if (!w) { fclose(f); return(0); }
+	fclose(f);
+#endif
+
+	free(buf);
+	return(1);
+
+}
+
+// dump memory
 void te_dump(void) {
 
 	int l = 0;
@@ -320,27 +439,26 @@ void te_dump(void) {
 
 	while (ptr) {
 
-		printf("::%i::%s::\n", l, ptr->text);
+		printf("::%i::%s::\r\n", l, ptr->text);
 
 		ptr = ptr->next;
 		l++;
 
 	};
 
-	printf("done.\n");
-
 }
 
 #ifdef MAIN
 int main(int argc, char *argv[]) {
 
-	te_init();
-	while(te_yield());
+	if (argc > 1) {
+		te_edit(argv[1]);
+	} else {
+		printf("%s <filename>\n", argv[0]);
+	}
 
-	te_dump();
-
-#ifndef CURSES
-	echo();
+#ifdef CURSES
+	endwin();
 #endif
 
 	return 0;
