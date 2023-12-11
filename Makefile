@@ -101,6 +101,14 @@ else ifeq ($(BOARD), konfekt)
 	PROG = openFPGALoader -c $(CABLE)
 	FLASH = openFPGALoader -v -c $(CABLE) -f
 	FLASH_OFFSET = -o
+else ifeq ($(BOARD), minze)
+	FAMILY = ecp5
+	DEVICE = 12k
+	PACKAGE = CABGA256
+	LPF = minze_v1.lpf
+	PROG = openFPGALoader -c $(CABLE)
+	FLASH = openFPGALoader -v -c $(CABLE) -f
+	FLASH_OFFSET = -o
 else ifeq ($(BOARD), kolsch_v0)
 	FAMILY = gatemate
 	DEVICE = ccgma1
