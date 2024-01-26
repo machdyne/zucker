@@ -506,11 +506,14 @@ void cmd_xfer() {
 
 void cmd_load_lix() {
 	print("loading LIX ... ");
+	memcpy(LIX_MEM_ADDR, LIX_FLASH_ADDR, LIX_SIZE);
+/*
    volatile uint32_t *from_addr = (uint32_t *)LIX_FLASH_ADDR;
    volatile uint32_t *to_addr = (uint32_t *)LIX_MEM_ADDR;
 	for (int i = 0; i < (LIX_SIZE / sizeof(int)); i += 1) {
 		(*(volatile uint32_t *)(to_addr + i)) = *(from_addr + i);
 	}
+*/
 	print("done.\n");
 }
 
@@ -540,7 +543,7 @@ void main() {
 
 	print("ZBL\n");
 
-#if defined FPGA_ICE40 && !BOARD_KOLIBRI
+#if defined FPGA_ICE40 && !BOARD_KOLIBRI && !BOARD_KUCHEN && !BOARD_KROTE
 	// clear SRAM
 	addr_ptr = MEM_SRAM;
 	mem_total = MEM_SRAM_SIZE;

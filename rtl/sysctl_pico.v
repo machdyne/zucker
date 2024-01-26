@@ -52,6 +52,16 @@ module sysctl #()
 
 	output reg LED_A,
 
+`ifdef CCEVAL
+	output led2,
+	output led3,
+	output led4,
+	output led5,
+	output led6,
+	output led7,
+	output led8,
+`endif
+
 	output UART0_RX,
 	input UART0_TX,
 `ifdef UART0_HW_FLOW
@@ -2134,6 +2144,16 @@ module sysctl #()
 	assign pmodb9 = mem_addr[9];
 	assign pmodb10 = mem_addr[10];
 */
+
+`ifdef CCEVAL
+	assign led2 = ~cpu_trap;
+	assign led3 = ~resetn;
+	assign led4 = ~(|mem_wstrb);
+	assign led5 = ~mem_ready;
+	assign led6 = ~mem_addr[7];
+	assign led7 = ~mem_addr[8];
+	assign led8 = ~mem_addr[9];
+`endif
 
 	wire cpu_trap;
 	wire [31:0] cpu_irq;

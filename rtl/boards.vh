@@ -204,6 +204,20 @@
 `define EN_VIDEO
 `define EN_VIDEO_VGA
 
+`elsif KROTE
+
+`define FPGA_ICE40
+`define OSC100
+`define SYSCLK25
+`define VCLK25
+`define EN_UART0
+`undef UART0_HW_FLOW
+`define EN_RTC
+`define EN_SPI
+`define EN_CSPI_FLASH
+`define EN_CLK10KHZ
+`define EN_QQSPI
+
 `elsif KOLSCH_V0
 
 `define FPGA_GATEMATE

@@ -137,7 +137,7 @@ else ifeq ($(BOARD), cceval)
 	SYNTH = ~/work/fpga/gatemate/cc-toolchain-linux/bin/yosys/yosys
 	PR = ~/work/fpga/gatemate/cc-toolchain-linux/bin/p_r/p_r
 	PRFLAGS += -uCIO -ccf boards/cceval.ccf -cCP -crc +uCIO
-	#PRFLAGS += -uCIO -ccf boards/cceval.ccf -cCP -crc +uCIO
+	PROG = openFPGALoader -c gatemate_evb_jtag
 endif
 
 FAMILY_UC = $(shell echo '$(FAMILY)' | tr '[:lower:]' '[:upper:]')
@@ -184,7 +184,7 @@ ifeq ($(FAMILY), ice40)
 soc:
 	icebram firmware/firmware_seed.hex firmware/firmware.hex < \
 		output/$(BOARD_LC)/soc.txt | icepack > output/$(BOARD_LC)/soc.bin
-else
+else ifeq ($(FAMILY), ecp5)
 soc:
 	ecpbram -i output/$(BOARD_LC)/soc.config \
 		-o output/$(BOARD_LC)/soc_final.config \
@@ -194,8 +194,13 @@ soc:
 		--bit output/$(BOARD_LC)/soc.bin
 endif
 
+ifeq ($(FAMILY), gatemate)
+prog_soc: firmware
+	$(PROG) output/$(BOARD_LC)/soc_00.cfg.bit
+else
 prog_soc: firmware soc
 	$(PROG) output/$(BOARD_LC)/soc.bin
+endif
 
 flash_soc: firmware soc
 	$(FLASH) output/$(BOARD_LC)/soc.bin
