@@ -62,6 +62,17 @@ module sysctl #()
 	output led8,
 `endif
 
+`ifdef LOWE
+	output pmoda1,
+	output pmoda2,
+	output pmoda3,
+	output pmoda4,
+	output pmoda7,
+	output pmoda8,
+	output pmoda9,
+	output pmoda10,
+`endif
+
 	output UART0_RX,
 	input UART0_TX,
 `ifdef UART0_HW_FLOW
@@ -168,7 +179,11 @@ module sysctl #()
 		SRAM0_D8, SRAM0_D9, SRAM0_D10, SRAM0_D11,
 		SRAM0_D12, SRAM0_D13, SRAM0_D14, SRAM0_D15,
 
+`ifdef VANILLE
+	output SRAM0_WE, SRAM0_OE, SRAM0_LB, SRAM0_UB,
+`else
 	output SRAM0_CE, SRAM0_WE, SRAM0_OE, SRAM0_LB, SRAM0_UB,
+`endif
 `endif
 
 `ifdef EN_SRAM32
@@ -310,9 +325,16 @@ module sysctl #()
 `endif
 
 `ifdef FPGA_GATEMATE
+/*
+	// 25mhz sysclk
+	wire pll_locked = 1;
+	reg clk;
+	always @(posedge CLK_50) begin
+		clk <= ~clk;
+	end
+*/	
 
    wire clk270, clk180, clk90, usr_ref_out;
-   wire usr_pll_lock_stdy;
 
    CC_PLL #(
 `ifdef OSC10
@@ -347,7 +369,7 @@ module sysctl #()
 `endif
 		.CLK_FEEDBACK(1'b0), .USR_CLK_REF(1'b0),
       .USR_LOCKED_STDY_RST(1'b0),
-		.USR_PLL_LOCKED_STDY(usr_pll_lock_stdy),
+//		.USR_PLL_LOCKED_STDY(pll_locked),
 		.USR_PLL_LOCKED(pll_locked),
       .CLK270(clk270),
 		.CLK180(clk180),
@@ -493,6 +515,14 @@ module sysctl #()
 	// RESET GENERATOR
 	// ---------------
 
+/*
+`ifdef LOWE
+	wire resetn;
+	CC_USR_RSTN usr_rstn_i (
+		.USR_RSTN(resetn)
+	);
+`else
+*/
 	reg [11:0] resetn_counter = 0;
 	wire resetn = &resetn_counter;
 
@@ -502,6 +532,9 @@ module sysctl #()
 		else if (!resetn)
 			resetn_counter <= resetn_counter + 1;
 	end
+/*
+`endif
+*/
 
 	// RTC
 	reg [31:0] clock_secs = 0;
@@ -775,23 +808,43 @@ module sysctl #()
    reg [15:0] sram_dout;
    wire [15:0] sram_din;
 
+`ifdef FPGA_ICE40
+
 	SB_IO #(
 		.PIN_TYPE(6'b 1010_01),
 		.PULLUP(1'b 0)
 	) sram_io [15:0] (
-		.PACKAGE_PIN({ SRAM0_D15, SRAM0_D14, SRAM0_D13, SRAM0_D12, SRAM0_D11,
-			SRAM0_D10, SRAM0_D9, SRAM0_D8, SRAM0_D7, SRAM0_D6, SRAM0_D5, SRAM0_D4,
+		.PACKAGE_PIN({ SRAM0_D15, SRAM0_D14, SRAM0_D13, SRAM0_D12,
+			SRAM0_D11, SRAM0_D10, SRAM0_D9, SRAM0_D8,
+			SRAM0_D7, SRAM0_D6, SRAM0_D5, SRAM0_D4,
 			SRAM0_D3, SRAM0_D2, SRAM0_D1, SRAM0_D0 }),
 		.OUTPUT_ENABLE(sram_wrlb || sram_wrub),
 		.D_OUT_0(sram_dout),
 		.D_IN_0(sram_din)
 	);
 
+`else
+
+	assign sram_din = { SRAM0_D15, SRAM0_D14, SRAM0_D13, SRAM0_D12,
+			SRAM0_D11, SRAM0_D10, SRAM0_D9, SRAM0_D8,
+			SRAM0_D7, SRAM0_D6, SRAM0_D5, SRAM0_D4,
+			SRAM0_D3, SRAM0_D2, SRAM0_D1, SRAM0_D0 };
+
+	assign { SRAM0_D15, SRAM0_D14, SRAM0_D13, SRAM0_D12,
+			SRAM0_D11, SRAM0_D10, SRAM0_D9, SRAM0_D8,
+			SRAM0_D7, SRAM0_D6, SRAM0_D5, SRAM0_D4,
+			SRAM0_D3, SRAM0_D2, SRAM0_D1, SRAM0_D0 } =
+				(sram_wrlb || sram_wrub) ? sram_dout : 16'hzzzz;
+
+`endif
+
 	assign { SRAM_A17, SRAM_A16, SRAM_A15, SRAM_A14, SRAM_A13, SRAM_A12,
 		SRAM_A11, SRAM_A10, SRAM_A9, SRAM_A8, SRAM_A7, SRAM_A6, SRAM_A5,
 		SRAM_A4, SRAM_A3, SRAM_A2, SRAM_A1, SRAM_A0 } = sram_addr;
 
+`ifndef VANILLE
 	assign SRAM0_CE = 0;
+`endif
 	assign SRAM0_WE = !(sram_wrlb || sram_wrub);
 	assign SRAM0_OE = (sram_wrlb || sram_wrub);
 	assign SRAM0_LB = (sram_wrlb || sram_wrub) ? !sram_wrlb : 0;
@@ -1164,6 +1217,8 @@ module sysctl #()
 
 // --
 
+	reg [31:0] ctr; // XXX
+
 	always @(posedge clk) begin
 
 		mem_ready <= 0;
@@ -1423,6 +1478,8 @@ module sysctl #()
 
 		if (!resetn) begin
 
+			ctr <= 32'hffffffff; // XXX
+
 			uart0_dr <= 0;
 			uart0_txbusy <= 0;
 `ifdef UART0_HW_FLOW
@@ -1484,6 +1541,9 @@ module sysctl #()
 `endif
 
 		end else if (mem_valid && !mem_ready) begin
+
+			ctr <= ctr + 1; // XXX
+
 
 			(* parallel_case *)
 			case (1)
@@ -2153,6 +2213,28 @@ module sysctl #()
 	assign led6 = ~mem_addr[7];
 	assign led7 = ~mem_addr[8];
 	assign led8 = ~mem_addr[9];
+`endif
+
+`ifdef LOWE
+	assign pmoda1 = ctr[29];
+	assign pmoda2 = ctr[28];
+	assign pmoda3 = ctr[27];
+	assign pmoda4 = ctr[26];
+	assign pmoda7 = ctr[25];
+	assign pmoda8 = ctr[24];
+	assign pmoda9 = ctr[23];
+	assign pmoda10 = ctr[22];
+
+/*
+	assign pmoda1 = cpu_trap;
+	assign pmoda2 = resetn;
+	assign pmoda3 = (|mem_wstrb);
+	assign pmoda4 = mem_ready;
+	assign pmoda7 = mem_addr[7];
+	assign pmoda8 = mem_addr[8];
+	assign pmoda9 = mem_addr[9];
+	assign pmoda10 = 0;
+*/
 `endif
 
 	wire cpu_trap;

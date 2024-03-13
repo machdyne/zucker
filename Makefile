@@ -109,34 +109,44 @@ else ifeq ($(BOARD), minze)
 	PROG = openFPGALoader -c $(CABLE)
 	FLASH = openFPGALoader -v -c $(CABLE) -f
 	FLASH_OFFSET = -o
+else ifeq ($(BOARD), vanille)
+	FAMILY = ecp5
+	DEVICE = 12k
+	PACKAGE = TQFP144
+	LPF = vanille_v2.lpf
+	PROG = openFPGALoader -c $(CABLE)
+	FLASH = openFPGALoader -v -c $(CABLE) -f
+	FLASH_OFFSET = -o
 else ifeq ($(BOARD), kolsch_v0)
 	FAMILY = gatemate
 	DEVICE = ccgma1
-	SYNTH = ~/work/fpga/gatemate/cc-toolchain-linux-2023-09-25/bin/yosys/yosys
-	#SYNTH = ~/work/fpga/gatemate/eval/cc-toolchain-linux/bin/yosys/yosys
-	#PR = ~/work/fpga/gatemate/cc-toolchain-linux-2023-09-25/bin/p_r/p_r
-	PR = ~/work/fpga/gatemate/cc-toolchain-linux-old2/bin/p_r/p_r
-	PRFLAGS += -uCIO -ccf boards/kolsch_v0.ccf -cCP -crc +uCIO
+	#SYNTH = ~/work/fpga/gatemate/cc-toolchain-linux-2023-09-25/bin/yosys/yosys
+	SYNTH = ~/work/fpga/gatemate/eval/cc-toolchain-linux/bin/yosys/yosys
+	PR = ~/work/fpga/gatemate/cc-toolchain-linux/bin/p_r/p_r
+	#PR = ~/work/fpga/gatemate/cc-toolchain-linux-old2/bin/p_r/p_r
+	PRFLAGS += -uCIO -ccf boards/kolsch_v0.ccf -cCP -crc +uCIO -om 2
 else ifeq ($(BOARD), kolsch_v1)
 	FAMILY = gatemate
 	DEVICE = ccgma1
-	SYNTH = yosys
 	#SYNTH = ~/work/fpga/gatemate/eval/cc-toolchain-linux/bin/yosys/yosys
-	PR = ~/work/fpga/gatemate/cc-toolchain-linux-old2/bin/p_r/p_r
+	#PR = ~/work/fpga/gatemate/cc-toolchain-linux-old2/bin/p_r/p_r
+	SYNTH = ~/work/fpga/gatemate/cc-toolchain-linux/bin/yosys/yosys
+	PR = ~/work/fpga/gatemate/cc-toolchain-linux/bin/p_r/p_r
 	PRFLAGS += -uCIO -ccf boards/kolsch_v1.ccf -cCP -crc +uCIO
+	PROG = openFPGALoader -c dirtyJtag
 else ifeq ($(BOARD), lowe)
 	FAMILY = gatemate
 	DEVICE = ccgma1
 	SYNTH = ~/work/fpga/gatemate/cc-toolchain-linux/bin/yosys/yosys
 	PR = ~/work/fpga/gatemate/cc-toolchain-linux/bin/p_r/p_r
-	PRFLAGS += -ccf boards/lowe.ccf -cCP -crc
-	#PRFLAGS += -uCIO -ccf boards/lowe.ccf -cCP -crc +uCIO
+	PRFLAGS += -uCIO -ccf boards/lowe.ccf -cCP -crc +uCIO -om 3
+	PROG = openFPGALoader -c $(CABLE)
 else ifeq ($(BOARD), cceval)
 	FAMILY = gatemate
 	DEVICE = ccgma1
 	SYNTH = ~/work/fpga/gatemate/cc-toolchain-linux/bin/yosys/yosys
 	PR = ~/work/fpga/gatemate/cc-toolchain-linux/bin/p_r/p_r
-	PRFLAGS += -uCIO -ccf boards/cceval.ccf -cCP -crc +uCIO
+	PRFLAGS += -uCIO -ccf boards/cceval.ccf -cCP -crc +uCIO -om 3
 	PROG = openFPGALoader -c gatemate_evb_jtag
 endif
 

@@ -27,13 +27,17 @@ module gpu_ddmi (
            input in_vga_vsync,
            input in_vga_hsync,
 
-           output [OUT_TMDS_MSB:0] out_tmds_red,
-           output [OUT_TMDS_MSB:0] out_tmds_green,
-           output [OUT_TMDS_MSB:0] out_tmds_blue,
-           output [OUT_TMDS_MSB:0] out_tmds_clk
+           output [1:0] out_tmds_red,
+           output [1:0] out_tmds_green,
+           output [1:0] out_tmds_blue,
+           output [1:0] out_tmds_clk
+           //output [OUT_TMDS_MSB:0] out_tmds_red,
+           //output [OUT_TMDS_MSB:0] out_tmds_green,
+           //output [OUT_TMDS_MSB:0] out_tmds_blue,
+           //output [OUT_TMDS_MSB:0] out_tmds_clk
        );
 
-parameter DDR_ENABLED = 0;
+parameter DDR_ENABLED = 1;
 localparam OUT_TMDS_MSB = DDR_ENABLED ? 1 : 0;
 
 /* */

@@ -118,7 +118,7 @@ module gpu_video #(
 
 
 	gpu_ddmi #(
-		.DDR_ENABLED(1)
+		//.DDR_ENABLED(1)
 	) gpu_ddmi_i (
 		.pclk(vclk),
 		.tmds_clk(bclk),
