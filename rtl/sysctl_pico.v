@@ -24,6 +24,8 @@ localparam SYSCLK = 48_000_000;
 localparam SYSCLK = 36_000_000;
 `elsif SYSCLK25
 localparam SYSCLK = 25_000_000;
+`elsif SYSCLK24
+localparam SYSCLK = 24_000_000;
 `elsif SYSCLK20
 localparam SYSCLK = 20_000_000;
 `endif
@@ -94,6 +96,9 @@ module sysctl #()
 
 `ifdef EN_CSPI_SDCARD
 	output SPI_SS_SD,
+`ifdef EN_CSPI_SDCARD_SCK	// dedicated SCK
+	output SD_SCK,
+`endif
 `endif
 
 `ifdef EN_CSPI_RPMEM
@@ -346,6 +351,8 @@ module sysctl #()
 `endif
 `ifdef SYSCLK20
       .OUT_CLK("20.0"),   // pll output frequency in MHz
+`elsif SYSCLK24
+      .OUT_CLK("24.0"),   // pll output frequency in MHz
 `elsif SYSCLK25
       .OUT_CLK("25.0"),   // pll output frequency in MHz
 `elsif SYSCLK36
@@ -377,6 +384,13 @@ module sysctl #()
 		.CLK0(clk),
 		.CLK_REF_OUT(usr_ref_out)
    );
+
+`ifdef SYSCLK50
+	reg clk25mhz;
+	always @(posedge clk) begin
+		clk25mhz <= ~clk25mhz;
+	end
+`endif
 
 `ifdef SYSCLK25
 	assign clk25mhz = clk;
@@ -509,7 +523,11 @@ module sysctl #()
 		.clkout1(clk25mhz),
 		.locked(pll_locked),
 	);
+`ifdef SYSCLK25
+	assign clk = clk25mhz;
+`elsif SYSCLK50
 	assign clk = clk50mhz;
+`endif
 `endif
 
 	// RESET GENERATOR
@@ -642,7 +660,19 @@ module sysctl #()
 	initial $readmemh("firmware/firmware_seed.hex", bram);
 `endif
 
-	// SPI
+   // STAND-ALONE SPI SDCARD
+ 
+`ifdef EN_SDCARD
+	reg sd_ss;
+	reg sd_sck;
+	reg sd_mosi;
+	wire sd_miso = SD_MISO;
+	assign SD_SS = sd_ss;
+	assign SD_SCK = sd_sck;
+	assign SD_MOSI = sd_mosi;
+`endif
+
+	// CSPI BUS
 
 `ifdef EN_SPI
 
@@ -656,6 +686,21 @@ module sysctl #()
 	wire spi_is_rpmem = ((mem_addr & 32'hf000_0000) == 32'he000_0000);
 	wire spi_is_sd = ((mem_addr & 32'hffff_f000) == 32'hf000_2000);
 
+	// SDCARD ON CSPI BUS
+
+`ifdef EN_CSPI_SDCARD
+	reg sd_ss;
+	reg sd_sck;
+	reg sd_mosi;
+	wire sd_miso = SPI_MISO;
+`ifdef EN_CSPI_SDCARD_SCK
+	assign SD_SCK = sd_sck;
+`endif
+	assign SPI_SS_SD = spi_is_sd ? sd_ss : 1'b1;
+`else
+	assign spi_is_sd = 1'b0;
+`endif
+
 	assign SPI_MOSI = spi_is_flash ? cspi_flash_mosi :
 		spi_is_ram ? qqspi_mosi :
 		spi_is_rpmem ? cspi_rpmem_mosi :
@@ -666,23 +711,7 @@ module sysctl #()
 		spi_is_rpmem ? cspi_rpmem_sck :
 		spi_is_sd ? sd_sck : 1'bz;
 
-`ifdef EN_SDCARD
-	reg sd_ss;
-	reg sd_sck;
-	reg sd_mosi;
-	wire sd_miso = SD_MISO;
-	assign SD_SS = sd_ss;
-	assign SD_SCK = sd_sck;
-	assign SD_MOSI = sd_mosi;
-`elsif EN_CSPI_SDCARD
-	reg sd_ss;
-	reg sd_sck;
-	reg sd_mosi;
-	wire sd_miso = SPI_MISO;
-	assign SPI_SS_SD = spi_is_sd ? sd_ss : 1'b1;
-`else
-	assign spi_is_sd = 1'b0;
-`endif
+	// CSPI FLASH (usually an MMOD)
 
 `ifdef EN_CSPI_FLASH
 
@@ -781,6 +810,26 @@ module sysctl #()
 
 `endif
 
+// TODO: BSRAM16 not fully implemented yet
+`ifdef EN_BSRAM16
+
+   reg [1:0] sram_state;
+   reg [13:0] sram_addr;
+   reg [3:0] sram_wstrb;
+   reg [15:0] sram_dout;
+   wire [15:0] sram_din;
+
+	bsram #() bsram_i (
+		.clk(clk),
+		.resetn(resetn),
+		.addr(sram_addr),
+		.rdata(sram_din),
+		.wdata(sram_dout),
+		.wstrb(sram_wstrb)
+	);
+
+`endif
+
 `ifdef EN_BSRAM32
 
    reg [1:0] sram_state;
@@ -855,14 +904,17 @@ module sysctl #()
 `ifdef EN_SRAM32
 
    reg [2:0] sram_state;
-   reg sram0_wrlb, sram0_wrub;
-   reg sram1_wrlb, sram1_wrub;
+	reg [3:0] sram_wstrb;
+   wire sram0_wrlb, sram0_wrub;
+   wire sram1_wrlb, sram1_wrub;
    reg [17:0] sram_addr;
    reg [31:0] sram_dout;
    wire [31:0] sram_din;
 
-	wire sram_write = (sram0_wrlb || sram0_wrub || sram1_wrlb || sram1_wrub);
+	assign { sram1_wrub, sram1_wrlb, sram0_wrub, sram0_wrlb } = sram_wstrb;
+	wire sram_write = |sram_wstrb;
 
+`ifdef FPGA_ICE40
 	SB_IO #(
 		.PIN_TYPE(6'b 1010_01),
 		.PULLUP(1'b 0)
@@ -877,6 +929,31 @@ module sysctl #()
 		.D_OUT_0(sram_dout),
 		.D_IN_0(sram_din)
 	);
+`else
+
+	assign sram_din = {
+		SRAM1_D15, SRAM1_D14, SRAM1_D13, SRAM1_D12,
+		SRAM1_D11, SRAM1_D10, SRAM1_D9, SRAM1_D8,
+		SRAM1_D7, SRAM1_D6, SRAM1_D5, SRAM1_D4,
+		SRAM1_D3, SRAM1_D2, SRAM1_D1, SRAM1_D0,
+		SRAM0_D15, SRAM0_D14, SRAM0_D13, SRAM0_D12,
+		SRAM0_D11, SRAM0_D10, SRAM0_D9, SRAM0_D8,
+		SRAM0_D7, SRAM0_D6, SRAM0_D5, SRAM0_D4,
+		SRAM0_D3, SRAM0_D2, SRAM0_D1, SRAM0_D0
+	};
+
+	assign {
+		SRAM1_D15, SRAM1_D14, SRAM1_D13, SRAM1_D12,
+		SRAM1_D11, SRAM1_D10, SRAM1_D9, SRAM1_D8,
+		SRAM1_D7, SRAM1_D6, SRAM1_D5, SRAM1_D4,
+		SRAM1_D3, SRAM1_D2, SRAM1_D1, SRAM1_D0,
+		SRAM0_D15, SRAM0_D14, SRAM0_D13, SRAM0_D12,
+		SRAM0_D11, SRAM0_D10, SRAM0_D9, SRAM0_D8,
+		SRAM0_D7, SRAM0_D6, SRAM0_D5, SRAM0_D4,
+		SRAM0_D3, SRAM0_D2, SRAM0_D1, SRAM0_D0
+	} = sram_write ? sram_dout : 32'hzzzzzzzz;
+
+`endif
 
 	assign { SRAM_A17, SRAM_A16, SRAM_A15, SRAM_A14, SRAM_A13, SRAM_A12,
 		SRAM_A11, SRAM_A10, SRAM_A9, SRAM_A8, SRAM_A7, SRAM_A6, SRAM_A5,
@@ -1217,12 +1294,15 @@ module sysctl #()
 
 // --
 
-	reg [31:0] ctr; // XXX
+	reg [7:0] dly_ctr;
 
 	always @(posedge clk) begin
 
 		mem_ready <= 0;
 
+`ifdef EN_BSRAM16
+		sram_wstrb <= 0;
+`endif
 `ifdef EN_BSRAM32
 		sram_wstrb <= 0;
 `endif
@@ -1231,10 +1311,7 @@ module sysctl #()
 		sram_wrub <= 0;
 `endif
 `ifdef EN_SRAM32
-		sram0_wrlb <= 0;
-		sram0_wrub <= 0;
-		sram1_wrlb <= 0;
-		sram1_wrub <= 0;
+		sram_wstrb <= 4'b0000;
 `endif
 
 `ifdef EN_PS2
@@ -1266,6 +1343,13 @@ module sysctl #()
 			gpu_refill_words <= 40;
 `else
 			gpu_refill_words <= 80;
+`endif
+`endif
+`ifdef EN_BSRAM16
+`ifdef EN_GPU_FB_PIXEL_DOUBLING
+			gpu_refill_words <= 80;
+`else
+			gpu_refill_words <= 160;
 `endif
 `endif
 `ifdef EN_BSRAM32
@@ -1320,6 +1404,24 @@ module sysctl #()
 
 			gpu_hline_b <= { gpu_hline_b,
 				sram_din[24], sram_din[28], sram_din[16], sram_din[20],
+				sram_din[8], sram_din[12], sram_din[0], sram_din[4] };
+
+			gpu_refill_words <= gpu_refill_words - 1;
+`endif
+
+`ifdef EN_BSRAM16
+`ifdef EN_GPU_FB_PIXEL_DOUBLING
+			sram_addr <= (gpu_hy << 6) + (gpu_hy << 4) + gpu_refill_words;
+`else
+			sram_addr <= (gpu_y << 7) + (gpu_y << 5) + gpu_refill_words;
+`endif
+			gpu_hline_r <= { gpu_hline_r,
+				sram_din[10], sram_din[14], sram_din[2], sram_din[6] };
+
+			gpu_hline_g <= { gpu_hline_g,
+				sram_din[9], sram_din[13], sram_din[1], sram_din[5] };
+
+			gpu_hline_b <= { gpu_hline_b,
 				sram_din[8], sram_din[12], sram_din[0], sram_din[4] };
 
 			gpu_refill_words <= gpu_refill_words - 1;
@@ -1478,7 +1580,7 @@ module sysctl #()
 
 		if (!resetn) begin
 
-			ctr <= 32'hffffffff; // XXX
+			dly_ctr <= 0;
 
 			uart0_dr <= 0;
 			uart0_txbusy <= 0;
@@ -1512,6 +1614,9 @@ module sysctl #()
 `ifdef EN_SRAM32
 			sram_state <= 0;
 `endif
+`ifdef EN_BSRAM16
+			sram_state <= 0;
+`endif
 `ifdef EN_BSRAM32
 			sram_state <= 0;
 `endif
@@ -1541,9 +1646,6 @@ module sysctl #()
 `endif
 
 		end else if (mem_valid && !mem_ready) begin
-
-			ctr <= ctr + 1; // XXX
-
 
 			(* parallel_case *)
 			case (1)
@@ -1670,10 +1772,9 @@ module sysctl #()
 						if (sram_state == 0) begin
 							sram_addr <= (mem_addr & 32'h0fff_ffff) >> 2;
 							sram_dout <= mem_wdata;
-							sram1_wrub <= mem_wstrb[3];
-							sram1_wrlb <= mem_wstrb[2];
-							sram0_wrub <= mem_wstrb[1];
-							sram0_wrlb <= mem_wstrb[0];
+
+							sram_wstrb <= mem_wstrb;
+
 							sram_state <= 1;
 						end else if (sram_state == 1) begin
 							mem_ready <= 1;
@@ -2022,8 +2123,8 @@ module sysctl #()
 						end
 
 `ifdef EN_SDCARD
-						16'h2000: begin
 
+						16'h2000: begin
 							if (mem_wstrb)
 								{sd_ss, sd_sck, sd_mosi} <= mem_wdata[3:1];
 							else
@@ -2032,11 +2133,10 @@ module sysctl #()
 								};
 							mem_ready <= 1;
 						end
-`endif
 
-`ifdef EN_CSPI_SDCARD
+`elsif EN_CSPI_SDCARD
+
 						16'h2000: begin
-
 							if (mem_wstrb)
 								{sd_ss, sd_sck, sd_mosi} <= mem_wdata[3:1];
 							else
@@ -2045,6 +2145,7 @@ module sysctl #()
 								};
 							mem_ready <= 1;
 						end
+
 `endif
 
 `ifdef EN_PS2
@@ -2140,6 +2241,14 @@ module sysctl #()
 							mem_ready <= 1;
 						end
 `endif
+
+						16'h6000: begin
+							dly_ctr <= dly_ctr + 1;
+							if (dly_ctr == (SYSCLK / 1_000_000)) begin
+								dly_ctr <= 0;
+								mem_ready <= 1;
+							end
+						end
 
 `ifdef EN_GPU_BLIT
 						16'h8000: begin

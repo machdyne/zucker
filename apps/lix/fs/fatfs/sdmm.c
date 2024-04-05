@@ -37,8 +37,6 @@
 
 #include "zucker.h"		/* Include device specific declareation file here */
 
-#define PINB reg_sdcard
-
 #define DO_INIT()						/* Initialize port for MMC DO as input */
 #define DO			(reg_sdcard &	0x01)	/* Test for MMC DO ('H':true, 'L':false) */
 
@@ -59,31 +57,9 @@ static
 void dly_us (UINT n)	/* Delay n microseconds (avr-gcc -Os) */
 {
 	do {
-		PINB;
-#if F_CPU >= 6000000
-		PINB;
-#endif
-#if F_CPU >= 7000000
-		PINB;
-#endif
-#if F_CPU >= 8000000
-		PINB;
-#endif
-#if F_CPU >= 9000000
-		PINB;
-#endif
-#if F_CPU >= 10000000
-		PINB;
-#endif
-#if F_CPU >= 12000000
-		PINB; PINB;
-#endif
-#if F_CPU >= 14000000
-#error Too fast clock
-#endif
+		reg_delay_us;
 	} while (--n);
 }
-
 
 
 /*--------------------------------------------------------------------------

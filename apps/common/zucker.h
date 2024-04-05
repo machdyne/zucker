@@ -12,6 +12,7 @@
 #define reg_sdcard (*(volatile uint8_t*)0xf0002000)
 #define reg_ps2_data (*(volatile uint8_t*)0xf0003000)
 #define reg_ps2_ctrl (*(volatile uint8_t*)0xf0003004)
+#define reg_delay_us (*(volatile uint8_t*)0xf0006000)
 
 #define reg_gpu_blit_src (*(volatile uint32_t*)0xf0008000)
 #define reg_gpu_blit_dst (*(volatile uint32_t*)0xf0008004)

@@ -41,10 +41,10 @@ module ps2 (
 
 	reg ps2_dat_oe;
 	reg ps2_dat_o;
-	reg ps2_dat_i;
+	wire ps2_dat_i;
 	reg ps2_clk_oe;
 	reg ps2_clk_o;
-	reg ps2_clk_i;
+	wire ps2_clk_i;
 
 	assign ps2_dat_dbg = ps2_dat_oe ? ps2_dat_o : ps2_dat_i;
 	assign ps2_clk_dbg = ps2_clk_oe ? ps2_dat_o : ps2_clk_i;
@@ -52,6 +52,7 @@ module ps2 (
 	assign ps2_dr = (fifo_wptr != fifo_rptr);
 	assign ps2_rdata = fifo[fifo_rptr];
 
+`ifdef FPGA_ICE40
 	SB_IO #(
 		.PIN_TYPE(6'b 1010_01),
 		.PULLUP(1'b 0)
@@ -71,6 +72,14 @@ module ps2 (
 		.D_OUT_0(ps2_clk_o),
 		.D_IN_0(ps2_clk_i)
 	);
+`else
+
+	assign ps2_dat_i = ps2_dat;
+	assign ps2_clk_i = ps2_clk;
+	assign ps2_dat = ps2_dat_oe ? ps2_dat_o : 1'bz;
+	assign ps2_clk = ps2_clk_oe ? ps2_clk_o : 1'bz;
+
+`endif
 
 	assign ps2_bits_dbg = ps2_bits;
 	assign ps2_state_dbg = state;

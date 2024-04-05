@@ -47,9 +47,10 @@ int main(void) {
 	else
 		printf("failed.\n");
 
-
+/*
 	if (fs_size("/BOOT.BIN")) {
 		printf("found /BOOT.BIN, loading ... ");
+		fflush(stdout);
 		int rv = fs_load(0x40100000, "/BOOT.BIN");
 		if (rv) {
 			printf("load failed.\n");
@@ -60,6 +61,7 @@ int main(void) {
 			__builtin_unreachable();
 		}
 	}
+*/
 
 	sh();
 

@@ -251,13 +251,13 @@ module sdram #(
         dqm_nxt = 2'b11;
         ready_nxt = 1'b0;
         if (valid && !ready) begin
-          command_nxt     = CMD_ACT;
-          ba_nxt          = addr[22:21];
-          saddr_nxt       = {addr[24:23], addr[20:10]};
-          wait_states_nxt = TRCD;
-          ret_state_nxt   = |wmask ? COL_WRITEL : COL_READ;
+          command_nxt      = CMD_ACT;
+          ba_nxt           = addr[22:21];
+          saddr_nxt        = {addr[24:23], addr[20:10]};
+          wait_states_nxt  = TRCD;
+          ret_state_nxt    = |wmask ? COL_WRITEL : COL_READ;
           update_ready_nxt = 1'b1;
-          state_nxt       = WAIT_STATE;
+          state_nxt        = WAIT_STATE;
         end else begin
           /* autorefresh */
           command_nxt = CMD_REF;

@@ -140,9 +140,11 @@
 `define OSC48
 `define SYSCLK50
 `define VCLK25
-`define EN_SDRAM
+//`define EN_SDRAM
+`define EN_QQSPI
 `define EN_BSRAM32
 `define EN_CSPI_FLASH
+`define EN_SDCARD
 `define EN_UART0
 `define EN_SPI
 `define EN_RTC
@@ -180,6 +182,30 @@
 `define EN_VIDEO
 `define EN_VIDEO_DDMI
 
+`elsif OBST
+
+`define FPGA_ECP5
+`define OSC48
+`define SYSCLK50
+`define VCLK25
+`define EN_SRAM32
+`define EN_SPI
+`define EN_CSPI_FLASH
+`define EN_SDCARD
+`define EN_UART0
+`define EN_RTC
+`define EN_CLK10KHZ
+`define EN_PS2
+`define EN_GPU
+`define EN_GPU_TEXT
+`define EN_GPU_FB
+`define EN_GPU_FB_PIXEL_DOUBLING
+`define EN_GPU_BLIT
+`define EN_GPU_BLIT32
+`define EN_VIDEO
+`define EN_VIDEO_VGA
+`define EN_QQSPI
+
 `elsif MINZE
 
 `define FPGA_ECP5
@@ -216,7 +242,8 @@
 `define EN_UART0
 `undef UART0_HW_FLOW
 `define EN_SPI
-//`define EN_SDCARD
+`define EN_CSPI_SDCARD
+`define EN_CSPI_SDCARD_SCK
 `define EN_RTC
 `define EN_CLK10KHZ
 `define EN_GPU
@@ -261,6 +288,28 @@
 `define EN_UART0
 `define EN_RTC
 `define EN_CLK10KHZ
+//`define EN_SDRAM
+
+`elsif KOLSCH_V2
+
+`define FPGA_GATEMATE
+`define OSC48
+`define SYSCLK50
+`define VCLK25
+`define EN_UART0
+`undef UART0_HW_FLOW
+`define EN_RTC
+`define EN_CLK10KHZ
+`define EN_SDRAM
+`define EN_BSRAM32
+`define EN_GPU
+`define EN_GPU_TEXT
+`define EN_GPU_FB
+`define EN_GPU_FB_PIXEL_DOUBLING
+`define EN_GPU_BLIT
+`define EN_GPU_BLIT32
+`define EN_VIDEO
+`define EN_VIDEO_VGA
 
 `elsif LOWE
 
