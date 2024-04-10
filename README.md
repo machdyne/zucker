@@ -19,6 +19,8 @@ Zucker was originally created as a demo platform and a starting point for develo
 - [Konfekt](https://machdyne.com/product/konfekt-computer/)
 - [Minze](https://machdyne.com/product/minze-computer/)
 - [Vanille](https://machdyne.com/product/vanille-computer/)
+- [Obst](https://machdyne.com/product/obst-computer/)
+- [Kölsch](https://machdyne.com/product/kolsch-computer/)
 
 ## Getting Started
 
@@ -160,6 +162,7 @@ The default configuration assumes that a USB-UART PMOD is connected to PMODB (or
 | ``f0004004`` | ``f0004004`` | 1 | UART1 control register |
 | ``f0005000`` | ``f0005000`` | 1 | left gamepad |
 | ``f0005004`` | ``f0005004`` | 1 | right gamepad |
+| ``f0006000`` | ``f0006004`` | 1 | delay for 1uS |
 
 ### Video Graphics
 

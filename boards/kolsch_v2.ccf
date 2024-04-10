@@ -64,7 +64,7 @@ Pin_out	"sdram_a[2]" Loc = "IO_SB_B8";
 Pin_out	"sdram_a[3]" Loc = "IO_EA_B2";
 Pin_out	"sdram_a[4]" Loc = "IO_EA_B0";
 Pin_out	"sdram_a[5]" Loc = "IO_EA_A0";
-Pin_out	"sdram_a[6]" Loc = "IO_EA_B6";
+Pin_out	"sdram_a[6]" Loc = "IO_SB_B6";
 Pin_out	"sdram_a[7]" Loc = "IO_SB_A3";
 Pin_out	"sdram_a[8]" Loc = "IO_EA_A1";
 Pin_out	"sdram_a[9]" Loc = "IO_SB_B0";
@@ -72,7 +72,7 @@ Pin_out	"sdram_a[10]" Loc = "IO_SB_A2";
 Pin_out	"sdram_a[11]" Loc = "IO_SB_A0";
 Pin_out	"sdram_a[12]" Loc = "IO_EA_B1";
 
-Pin_out	"sdram_ba[0]" Loc = "IO_EA_B3";
+Pin_out	"sdram_ba[0]" Loc = "IO_EA_B4";
 Pin_out	"sdram_ba[1]" Loc = "IO_SB_B1";
 
 Pin_out	"sdram_cs_n" Loc = "IO_SB_A1";

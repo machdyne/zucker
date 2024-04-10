@@ -108,7 +108,7 @@ module sysctl #()
 
 `ifdef EN_SDCARD
 	output SD_SS,
-	input SD_MISO,
+	inout SD_MISO,
 	output SD_MOSI,
 	output SD_SCK,
 `endif
@@ -1121,7 +1121,11 @@ module sysctl #()
 
    reg [2:0] sdram_state;
 
+`ifdef EN_SDRAM_64MB
+	reg [25:0] sdram_addr;
+`else
 	reg [24:0] sdram_addr;
+`endif
 	reg [31:0] sdram_din;
 	wire [31:0] sdram_dout;
 	reg [3:0] sdram_wmask;
@@ -1608,6 +1612,11 @@ module sysctl #()
 			cart_valid <= 0;
 			cart_state <= 0;
 `endif
+`ifdef EN_SDCARD
+			sd_ss <= 1;
+			sd_sck <= 0;
+			sd_mosi <= 0;
+`endif
 `ifdef EN_SRAM16
 			sram_state <= 0;
 `endif
@@ -1772,9 +1781,7 @@ module sysctl #()
 						if (sram_state == 0) begin
 							sram_addr <= (mem_addr & 32'h0fff_ffff) >> 2;
 							sram_dout <= mem_wdata;
-
 							sram_wstrb <= mem_wstrb;
-
 							sram_state <= 1;
 						end else if (sram_state == 1) begin
 							mem_ready <= 1;

@@ -301,6 +301,7 @@
 `define EN_RTC
 `define EN_CLK10KHZ
 `define EN_SDRAM
+`define EN_SDRAM_64MB
 `define EN_BSRAM32
 `define EN_GPU
 `define EN_GPU_TEXT

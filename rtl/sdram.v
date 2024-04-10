@@ -35,7 +35,11 @@ module sdram #(
     input wire clk,
     input wire resetn,
 
+`ifdef EN_SDRAM_64MB
+    input wire [25:0] addr,
+`else
     input wire [24:0] addr,
+`endif
     input wire [31:0] din,
     input wire [3:0] wmask,
     input wire valid,
@@ -109,7 +113,8 @@ module sdram #(
   assign sdram_addr = saddr;
   assign sdram_dqm = dqm;
   assign {sdram_csn, sdram_rasn, sdram_casn, sdram_wen} = command;
-  assign sdram_ba = ba;
+  assign sdram_ba = ba_nxt;
+  //assign sdram_ba = ba;
 
   // state machine stuff
   localparam RESET = 0;
@@ -252,8 +257,13 @@ module sdram #(
         ready_nxt = 1'b0;
         if (valid && !ready) begin
           command_nxt      = CMD_ACT;
+`ifdef EN_SDRAM_64MB
+          ba_nxt           = addr[23:22];
+          saddr_nxt        = {addr[25:24], addr[21:11]};
+`else
           ba_nxt           = addr[22:21];
           saddr_nxt        = {addr[24:23], addr[20:10]};
+`endif
           wait_states_nxt  = TRCD;
           ret_state_nxt    = |wmask ? COL_WRITEL : COL_READ;
           update_ready_nxt = 1'b1;
@@ -274,7 +284,11 @@ module sdram #(
         command_nxt     = CMD_READ;
         dqm_nxt         = 2'b00;
         saddr_nxt       = {3'b001, addr[10:2], 1'b0};  // autoprecharge and column
+`ifdef EN_SDRAM_64MB
+        ba_nxt          = addr[23:22];
+`else
         ba_nxt          = addr[22:21];
+`endif
         wait_states_nxt = CAS_LATENCY;
         ret_state_nxt   = COL_READL;
         state_nxt       = WAIT_STATE;
@@ -303,7 +317,11 @@ module sdram #(
         command_nxt = CMD_WRITE;
         dqm_nxt     = ~wmask[1:0];
         saddr_nxt   = {3'b001, addr[10:2], 1'b0};  // autoprecharge and column
+`ifdef EN_SDRAM_64MB
+        ba_nxt      = addr[23:22];
+`else
         ba_nxt      = addr[22:21];
+`endif
         dq_nxt      = din[15:0];
         oe_nxt      = 1'b1;
         //wait_states_nxt = TRP;
@@ -315,7 +333,11 @@ module sdram #(
         command_nxt      = CMD_NOP;
         dqm_nxt          = ~wmask[3:2];
         saddr_nxt        = {3'b001, addr[10:2], 1'b0};  // autoprecharge and column
+`ifdef EN_SDRAM_64MB
+        ba_nxt           = addr[23:22];
+`else
         ba_nxt           = addr[22:21];
+`endif
         dq_nxt           = din[31:16];
         oe_nxt           = 1'b1;
         wait_states_nxt  = TRP;
