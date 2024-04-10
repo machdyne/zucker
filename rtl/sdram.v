@@ -113,8 +113,8 @@ module sdram #(
   assign sdram_addr = saddr;
   assign sdram_dqm = dqm;
   assign {sdram_csn, sdram_rasn, sdram_casn, sdram_wen} = command;
-  assign sdram_ba = ba_nxt;
-  //assign sdram_ba = ba;
+//  assign sdram_ba = ba_nxt;
+  assign sdram_ba = ba;
 
   // state machine stuff
   localparam RESET = 0;
