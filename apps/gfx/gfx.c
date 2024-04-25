@@ -2,10 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../common/zucker.h"
 #include "tileset.h"
 
 #define WIDTH 320
 #define HEIGHT 240
+
+#define EN_BLIT32 1
 
 #ifdef BAREMETAL
 
@@ -45,7 +48,7 @@ void draw_sprite(uint8_t idx, uint16_t x, uint16_t y);
 void draw_line(int x0, int y0, int x1, int y1, color_t color);
 
 int main(void) {
-
+/*
 	color_t red, green, blue;
 
 	red.red = 0xff;
@@ -59,6 +62,7 @@ int main(void) {
 	blue.red = 0x00;
 	blue.green = 0x0;
 	blue.blue = 0xff;
+*/
 
 	void *addr = (void *)0x20009600;
 	memset(addr, 0, 320*240/2);
@@ -68,6 +72,8 @@ int main(void) {
 	int px, py, idx;
 
 	for (int i = 0; i < 1000; i++) {
+
+		(*(volatile uint8_t*)(0x10000000 + i)) = 'G';
 
 		px = (rand() % WIDTH) - 5;
 		py = (rand() % HEIGHT) - 5;
@@ -91,13 +97,23 @@ int main(void) {
 
 void draw_sprite(uint8_t idx, uint16_t x, uint16_t y) {
 
-   // width = 2 bytes = 4 pixels
-   // rows = 5
+#ifdef EN_BLIT32
+   // width = 32 pixels / 2 bytes per pixel
+   // rows = 32 pixels
+   // stride = 40 = 320 / 2 pixels per byte / 4 bytes per word
+   // src = end_of_sram_addr + sprite_offset
+   // dst = stride * screen row + (screen col / 2 bytes per word)
+   gpu_blit(0x00002580 + (idx * 40) + (idx * 16),
+		0x00000000 + y * 40 + (x / 4), 16, 32, 40);
+#else // BLIT16
+   // width = 32 pixels / 2 bytes per pixel
+   // rows = 32 pixels
    // stride = 80 = 320 / 2 pixels per byte / 2 bytes per word
-   // src = end_of_sram_addr / 2 bytes per word
+   // src = end_of_sram_addr + sprite_offset
    // dst = stride * screen row + (screen col / 2 bytes per word)
    gpu_blit(0x00004b00 + (idx * 80) + (idx * 16),
 		0x00000000 + y * 80 + (x / 2), 16, 32, 80);
+#endif
 
 }
 
