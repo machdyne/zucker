@@ -151,7 +151,11 @@ ssize_t _write(int file, const void *ptr, size_t len)
 }
 
 void putchar_video(const char c) {
-	int xy = curs_y * 80 + curs_x;
+
+   int cols = (reg_cfg_vid & 0xff00) >> 8;
+   int rows = reg_cfg_vid & 0xff;
+
+	int xy = curs_y * cols + curs_x;
 
 	if (c == 0x00) return;
 	if (c == 0x1b) {
@@ -179,7 +183,7 @@ void putchar_video(const char c) {
 			putchar_video('\n');
 		}
 		if (!strncmp(term_buf, "[K", 2)) {
-			memset((void *)(0x10000000 + xy), 0, 80 - curs_x);
+			memset((void *)(0x10000000 + xy), 0, cols - curs_x);
 			term_escape = false;
 		}
 		if (!strncmp(term_buf, "[J", 2)) {
@@ -189,9 +193,9 @@ void putchar_video(const char c) {
 		}
 
 		if (curs_x < 0) curs_x = 0;
-		if (curs_x > 79) curs_x = 79;
+		if (curs_x > cols - 1) curs_x = cols - 1;
 		if (curs_y < 0) curs_y = 0;
-		if (curs_y > 24) curs_y = 24;
+		if (curs_y > rows - 1) curs_y = rows - 1;
 
 		return;
 
@@ -206,15 +210,16 @@ void putchar_video(const char c) {
 	}
 
 	// erase to end of line
-	memset((void *)(0x10000000 + (curs_y * 80) + curs_x), 0, 80 - curs_x);
+	memset((void *)(0x10000000 + (curs_y * cols) + curs_x), 0, cols - curs_x);
 
-	if (curs_x > 79) { curs_x = 0; curs_y++; };
+	if (curs_x > cols - 1) { curs_x = 0; curs_y++; };
 
 	// scroll
-	if (curs_y > 24) {
-		curs_y = 24;
-		memcpy((void *)0x10000000, (void *)(0x10000000 + 80), 2000 - 80);
-		memset((void *)0x10000780, 0, 80);
+	if (curs_y > rows - 1) {
+		curs_y = rows - 1;
+		memcpy((void *)0x10000000, (void *)(0x10000000 + cols),
+			(rows * cols) - cols);
+		memset((void *)0x10000000 + (rows * cols) - cols, 0, cols);
 	};
 }
 

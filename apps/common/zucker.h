@@ -14,6 +14,10 @@
 #define reg_ps2_ctrl (*(volatile uint8_t*)0xf0003004)
 #define reg_delay_us (*(volatile uint8_t*)0xf0006000)
 
+#define reg_cfg_sys (*(volatile uint32_t*)0xf000f000)
+#define reg_cfg_vid (*(volatile uint32_t*)0xf000f004)
+#define reg_cfg_vid_res (*(volatile uint32_t*)0xf000f008)
+
 #define reg_gpu_blit_src (*(volatile uint32_t*)0xf0008000)
 #define reg_gpu_blit_dst (*(volatile uint32_t*)0xf0008004)
 #define reg_gpu_blit_ctl (*(volatile uint32_t*)0xf0008008)
