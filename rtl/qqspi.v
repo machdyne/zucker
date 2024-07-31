@@ -37,8 +37,6 @@ module qqspi #(
 
 	reg sck_do;
 
-//`ifdef TESTBENCH
-
 	assign mosi = sio_oe[0] ? sio_do[0] : 1'bz;
 	assign miso = sio_oe[1] ? sio_do[1] : 1'bz;
 	assign sio2 = sio_oe[2] ? sio_do[2] : 1'bz;
@@ -47,21 +45,6 @@ module qqspi #(
 	assign sio_di = {sio3, sio2, miso, mosi};
 	assign sck = valid ? sck_do : 1'bz;
 
-/*
-`else
-
-	SB_IO #(
-		.PIN_TYPE(6'b1010_01),
-		.PULLUP(1'b0)
-	) qqspi_io [3:0] (
-		.PACKAGE_PIN({sio3, sio2, miso, mosi}),
-		.OUTPUT_ENABLE(sio_oe),
-		.D_OUT_0(sio_do),
-		.D_IN_0(sio_di)
-	);
-
-`endif
-*/
 	localparam [2:0]
 		STATE_IDLE			= 4'd0,
 		STATE_INIT			= 4'd1,

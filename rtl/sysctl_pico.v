@@ -259,9 +259,7 @@ module sysctl #()
 
 );
 
-	// XXX
-	assign led_g = UART0_CTS;
-	assign led_b = 1;
+	reg [31:0] reg_cfg_sys = (SYSCLK / 1_000_000);
 
 	// CLOCKS
 	// ------
@@ -1178,6 +1176,9 @@ module sysctl #()
 	reg [3:0] gpu_blit_state;
 `endif
 
+`ifdef EN_GPU_FB_MONO
+	reg [767:0] gpu_hline;
+`else
 `ifdef EN_GPU_FB_PIXEL_DOUBLING
 	reg [319:0] gpu_hline_r;
 	reg [319:0] gpu_hline_g;
@@ -1187,6 +1188,7 @@ module sysctl #()
 	reg [639:0] gpu_hline_g;
 	reg [639:0] gpu_hline_b;
 `endif
+`endif
 
 	assign gpu_lock = (gpu_refill_words && sram_state == 0);
 
@@ -1195,13 +1197,40 @@ module sysctl #()
 `endif
 
 `ifdef EN_VIDEO
+
+`ifdef EN_GPU_TEXT
+`ifdef EN_GPU_FB_MONO
+	reg [31:0] reg_cfg_vid = 32'h8000_0000 | 128 << 8 | 48;
+`else
+	reg [31:0] reg_cfg_vid = 32'h8000_0000 | 80 << 8 | 25;
+`endif
+`else
+	reg [31:0] reg_cfg_vid = 32'h8000_0000;
+`endif
+
+`ifdef EN_GPU_FB_MONO
+	reg [31:0] reg_cfg_vid_res = 1024 << 16 | 768;
+`else
+`ifdef EN_GPU_FB_PIXEL_DOUBLING
+	reg [31:0] reg_cfg_vid_res = 320 << 16 | 240;
+`else
+	reg [31:0] reg_cfg_vid_res = 640 << 16 | 480;
+`endif
+`endif
+
 	gpu_video #() gpu_video_i
 	(
 		.clk(clk),
-		.vclk(clk25mhz),
+`ifdef EN_GPU_FB_MONO
+		.pclk(clk75mhz),
+`else
+		.pclk(clk25mhz),
+`endif
 		.resetn(resetn),
 		.pixel(gpu_pixel),
-`ifdef EN_GPU_FB
+`ifdef EN_GPU_FB_MONO
+		.hline(gpu_hline),
+`elsif EN_GPU
 		.hline_r(gpu_hline_r),
 		.hline_g(gpu_hline_g),
 		.hline_b(gpu_hline_b),
@@ -1221,6 +1250,8 @@ module sysctl #()
 `ifdef EN_VIDEO_DDMI
 `ifdef VCLK25
 		.bclk(clk125mhz),
+`elsif EN_GPU_FB_MONO
+		.bclk(clk125mhz),
 `else
 		.bclk(clk126mhz),
 `endif
@@ -1235,10 +1266,17 @@ module sysctl #()
 	);
 `else
 	wire gpu_lock = 0;
+	reg [31:0] reg_cfg_vid = 32'h0000_0000;
+	reg [31:0] reg_cfg_vid_res = 32'h0000_0000;
 `endif
 
 `ifdef EN_GPU_TEXT
+
+`ifdef EN_GPU_FB_MONO
+	reg [10:0] vram_addr;
+`else
 	reg [8:0] vram_addr;
+`endif
 	wire [31:0] vram_rdata;
 	reg [31:0] vram_wdata;
 	reg [3:0] vram_wstrb;
@@ -1314,36 +1352,71 @@ module sysctl #()
 
 		if (gpu_refill) begin
 `ifdef EN_SRAM16
+`ifdef EN_GPU_FB_MONO
+			gpu_refill_words <= 64;
+`else
 `ifdef EN_GPU_FB_PIXEL_DOUBLING
 			gpu_refill_words <= 80;
 `else
 			gpu_refill_words <= 160;
 `endif
 `endif
+`endif
+
 `ifdef EN_SRAM32
+`ifdef EN_GPU_FB_MONO
+			gpu_refill_words <= 32;
+`else
 `ifdef EN_GPU_FB_PIXEL_DOUBLING
 			gpu_refill_words <= 40;
 `else
 			gpu_refill_words <= 80;
 `endif
 `endif
+`endif
+
 `ifdef EN_BSRAM16
+`ifdef EN_GPU_FB_MONO
+			gpu_refill_words <= 64;
+`else
 `ifdef EN_GPU_FB_PIXEL_DOUBLING
 			gpu_refill_words <= 80;
 `else
 			gpu_refill_words <= 160;
 `endif
 `endif
+`endif
+
 `ifdef EN_BSRAM32
+`ifdef EN_GPU_FB_MONO
+			gpu_refill_words <= 32;
+`else
 `ifdef EN_GPU_FB_PIXEL_DOUBLING
 			gpu_refill_words <= 40;
 `else
 			gpu_refill_words <= 80;
+`endif
 `endif
 `endif
 		end
 
 		if (gpu_lock) begin
+
+`ifdef EN_GPU_FB_MONO
+
+`ifdef EN_SRAM16
+			sram_addr <= (gpu_y << 6) + gpu_refill_words;
+			gpu_hline <= { gpu_hline, sram_din[15:0] };
+`endif
+
+`ifdef EN_SRAM32
+			sram_addr <= (gpu_y << 5) + gpu_refill_words;
+			gpu_hline <= { gpu_hline, sram_din[31:0] };
+`endif
+
+			gpu_refill_words <= gpu_refill_words - 1;
+
+`else
 
 `ifdef EN_SRAM16
 `ifdef EN_GPU_FB_PIXEL_DOUBLING
@@ -1421,6 +1494,7 @@ module sysctl #()
 				sram_din[8], sram_din[12], sram_din[0], sram_din[4] };
 
 			gpu_refill_words <= gpu_refill_words - 1;
+`endif
 `endif
 
 `ifdef EN_GPU_BLIT
@@ -2154,6 +2228,21 @@ module sysctl #()
 						end
 
 `endif
+
+						16'hf000: begin
+							if (!mem_wstrb) mem_rdata <= reg_cfg_sys;
+							mem_ready <= 1;
+						end
+
+						16'hf004: begin
+							if (!mem_wstrb) mem_rdata <= reg_cfg_vid;
+							mem_ready <= 1;
+						end
+
+						16'hf008: begin
+							if (!mem_wstrb) mem_rdata <= reg_cfg_vid_res;
+							mem_ready <= 1;
+						end
 
 						default: begin
 							mem_ready <= 1;

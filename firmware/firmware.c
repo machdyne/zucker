@@ -9,7 +9,6 @@
 #include <stdbool.h>
 
 #define EN_BANNER 1
-#define EN_VIDEO 1
 
 #define reg_uart_data (*(volatile uint8_t*)0xf0000000)
 #define reg_uart_ctrl (*(volatile uint8_t*)0xf0000004)
@@ -20,6 +19,11 @@
 #define reg_ps2_ctrl (*(volatile uint8_t*)0xf0003004)
 #define reg_gamepad_l (*(volatile uint32_t*)0xf0005000)
 #define reg_gamepad_r (*(volatile uint32_t*)0xf0005004)
+#define reg_delay_us (*(volatile uint32_t*)0xf0006000)
+
+#define reg_cfg_sys (*(volatile uint32_t*)0xf000f000)
+#define reg_cfg_vid (*(volatile uint32_t*)0xf000f004)
+#define reg_cfg_vid_res (*(volatile uint32_t*)0xf000f008)
 
 #define reg_gpu_blit_src (*(volatile uint32_t*)0xf0008000)
 #define reg_gpu_blit_dst (*(volatile uint32_t*)0xf0008004)
@@ -38,21 +42,16 @@
 #define SD_SS 0x08
 
 #define MEM_VRAM				0x10000000
-#define MEM_VRAM_SIZE		2000
 #define MEM_SRAM				0x20000000
 //#define MEM_SRAM_SIZE		0x20000		// 128KB
-#define MEM_SRAM_SIZE		0x80000		// 512KB
-//#define MEM_SRAM_SIZE		0x100000		// 1MB
+//#define MEM_SRAM_SIZE		0x80000		// 512KB
+#define MEM_SRAM_SIZE		0x100000		// 1MB
 #define MEM_HRAM				0x40000000
 //#define MEM_HRAM_SIZE		0x800000		// 8MB
 #define MEM_HRAM_SIZE		0x2000000	// 32MB
 //#define MEM_HRAM_SIZE		0x4000000	// 64MB
 #define MEM_FLASH				0x80000000
 #define MEM_FLASH_SIZE		0x2000000	// 32MB
-#define MEM_CART				0xa0000000
-#define MEM_CART_SIZE		0x2000000	// 32MB
-#define MEM_RP					0xe0000000
-#define MEM_RP_SIZE			0x100000
 
 #define LIX_MEM_ADDR			0x40000000
 #define LIX_FLASH_ADDR		0x80050000
@@ -81,6 +80,11 @@ void print_hex(uint32_t v, int digits);
 void memtest(uint32_t addr_ptr, uint32_t mem_total);
 void memcpy(uint32_t dest, uint32_t src, uint32_t n);
 
+int vid_cols;
+int vid_rows;
+int vid_hres;
+int vid_vres;
+
 // --------------------------------------------------------
 
 int putchar(int c)
@@ -91,9 +95,8 @@ int putchar(int c)
 		putchar('\r');
 
 	reg_uart_data = (char)c;
-#ifdef EN_VIDEO
-	putchar_vga(c);
-#endif
+	if (reg_cfg_vid)
+		putchar_vga(c);
 
 	return c;
 }
@@ -105,20 +108,21 @@ void print(const char *p)
 }
 
 void putchar_vga(const char c) {
-	int xy = curs_y * 80 + curs_x;
+	int xy = curs_y * vid_cols + curs_x;
 	if (c == '\n') {
 		curs_x = 0;
 		curs_y++;
 	} else {
 		(*(volatile uint8_t *)(0x10000000 + xy)) = c;
 		curs_x++;
-		for (int i = curs_x; i < 80 - curs_x + 1; i++)
+		for (int i = curs_x; i < vid_cols - curs_x + 1; i++)
 			(*(volatile uint8_t *)(0x10000000 + xy + i)) = ' ';
 	}
-	if (curs_x >= 80) { curs_x = 0; curs_y++; };
-	if (curs_y > 24) {
-		curs_y = 24;
-		memcpy(0x10000000, 0x10000000 + 80, 2000 - 80);
+	if (curs_x >= vid_cols) { curs_x = 0; curs_y++; };
+	if (curs_y > vid_rows - 1) {
+		curs_y = vid_rows - 1;
+		memcpy(0x10000000, 0x10000000 + vid_cols,
+			(vid_cols * vid_rows) - vid_cols);
 	};
 }
 
@@ -321,43 +325,37 @@ void cmd_info() {
 	uint8_t tmp;
 	uint32_t tmp32;
 
-	print("leds: ");
+	print("clk: 0x");
+	print_hex(reg_cfg_sys & 0xff, 2);
+	print("MHz ");
+
+	print("vid_en: 0x");
+	print_hex((reg_cfg_vid & 0x80000000) == 0x80000000, 2);
+	print(" ");
+
+	print("cols: 0x");
+	print_hex(vid_cols, 2);
+	print(" ");
+
+	print("rows: 0x");
+	print_hex(vid_rows, 2);
+	print(" ");
+
+	print("hres: 0x");
+	print_hex(vid_hres, 4);
+	print(" ");
+
+	print("vres: 0x");
+	print_hex(vid_vres, 4);
+	print("\n");
+
+	print("leds: 0x");
 	tmp = reg_leds;
 	print_hex(tmp, 2);
-	print("\n");
+	print(" ");
 
-	print("ps2: ");
-	tmp = reg_ps2_data;
-	print_hex(tmp, 2);
-	print("\n");
-
-	print("uptime: ");
+	print("uptime: 0x");
 	tmp32 = reg_rtc;
-	print_hex(tmp32, 8);
-	print("\n");
-
-	print("gamepad_l: ");
-	tmp32 = reg_gamepad_l;
-	print_hex(tmp32, 8);
-	print("\n");
-
-	print("gamepad_r: ");
-	tmp32 = reg_gamepad_r;
-	print_hex(tmp32, 8);
-	print("\n");
-
-	print("blit src: ");
-	tmp32 = reg_gpu_blit_src;
-	print_hex(tmp32, 8);
-	print("\n");
-
-	print("blit dst: ");
-	tmp32 = reg_gpu_blit_dst;
-	print_hex(tmp32, 8);
-	print("\n");
-
-	print("blit ctl: ");
-	tmp32 = reg_gpu_blit_ctl;
 	print_hex(tmp32, 8);
 	print("\n");
 
@@ -443,24 +441,26 @@ void memcpy(uint32_t dest, uint32_t src, uint32_t n) {
 	}
 }
 
-void cmd_memcpy()
-{
-	print("copying hram to sram ... ");
-	memcpy(MEM_SRAM, MEM_HRAM, MEM_SRAM_SIZE);
-	print("done.\n");
-}
-
 //
 // --------------------------------------------------------
+
+void cmd_sleep() {
+
+	for (int i = 0; i < 1000000; i++) {
+		reg_delay_us;
+	}
+
+}
 
 void cmd_help() {
 
 	print("\n [0] toggle address\n");
 	print(" [D] dump memory as bytes\n");
 	print(" [W] dump memory as words\n");
+	print(" [9] reset memory page\n");
+	print(" [ ] next memory page\n");
 	print(" [I] system info\n");
 	print(" [M] test memory\n");
-	print(" [C] copy hram to sram\n");
 	print(" [X] receive to memory (xfer)\n");
 	print(" [1] led on\n");
 	print(" [2] led off\n");
@@ -478,17 +478,11 @@ void cmd_toggle_addr_ptr(void) {
 		mem_total = MEM_SRAM_SIZE;
 	} else if (addr_ptr == MEM_SRAM) {
 		addr_ptr = MEM_VRAM;
-		mem_total = MEM_VRAM_SIZE;
+		mem_total = vid_cols * vid_rows;
 	} else if (addr_ptr == MEM_VRAM) {
 		addr_ptr = MEM_FLASH;
 		mem_total = MEM_FLASH_SIZE;
 	} else if (addr_ptr == MEM_FLASH) {
-		addr_ptr = MEM_CART;
-		mem_total = MEM_CART_SIZE;
-	} else if (addr_ptr == MEM_CART) {
-		addr_ptr = MEM_RP;
-		mem_total = MEM_RP_SIZE;
-	} else if (addr_ptr == MEM_RP) {
 		addr_ptr = MEM_HRAM;
 		mem_total = MEM_HRAM_SIZE;
 	}
@@ -507,29 +501,7 @@ void cmd_xfer() {
 void cmd_load_lix() {
 	print("loading LIX ... ");
 	memcpy(LIX_MEM_ADDR, LIX_FLASH_ADDR, LIX_SIZE);
-/*
-   volatile uint32_t *from_addr = (uint32_t *)LIX_FLASH_ADDR;
-   volatile uint32_t *to_addr = (uint32_t *)LIX_MEM_ADDR;
-	for (int i = 0; i < (LIX_SIZE / sizeof(int)); i += 1) {
-		(*(volatile uint32_t *)(to_addr + i)) = *(from_addr + i);
-	}
-*/
 	print("done.\n");
-}
-
-void test_rpmem() {
-   volatile uint32_t *rpmem_addr = (uint32_t *)0xe0000000;
-	(*(volatile uint32_t *)(rpmem_addr)) = 0xaabbccdd;
-	uint32_t v = *(volatile uint32_t *)rpmem_addr;
-	print("RPMEM VAL: ");
-	print_hex(v, 8);
-	print("\n");
-}
-
-void gpu_blit(uint32_t src, uint32_t dst, uint8_t width, uint8_t rows, uint8_t stride) {
-	reg_gpu_blit_src = src;
-	reg_gpu_blit_dst = dst;
-	reg_gpu_blit_ctl = 0xff000000 | (stride << 16) | (rows << 8) | width;
 }
 
 void main() {
@@ -542,6 +514,12 @@ void main() {
 //	if (reg_rtc < 3) automated = 1;
 
 	print("ZBL\n");
+
+	vid_cols = (reg_cfg_vid & 0xff00) >> 8;
+	vid_rows = reg_cfg_vid & 0xff;
+
+	vid_hres = (reg_cfg_vid_res & 0xffff0000) >> 16;
+	vid_vres = reg_cfg_vid_res & 0xffff;
 
 #if defined FPGA_ICE40 && !BOARD_KOLIBRI && !BOARD_KUCHEN && !BOARD_KROTE
 	// clear SRAM
@@ -560,8 +538,10 @@ void main() {
 	print("/_  | | |   | | /  _|   \\\n");
 	print(" / /_   |  -'   \\  _| ' /\n");
  	print("/___/___|___|__\\_\\__|_:_\\\n");
+	print("\n");
 #endif
 
+	cmd_info();
 	cmd_help();
 
 	while (1) {
@@ -603,6 +583,15 @@ void main() {
 			case '2':
 				reg_leds = 0x00;
 				break;
+			case '9':
+				addr_ptr = 0x40000000;
+				break;
+			case ' ':
+				addr_ptr += 256;
+				break;
+			case 's':
+				cmd_sleep();
+				break;
 			case 'x':
 			case 'X':
 				cmd_xfer();
@@ -610,10 +599,6 @@ void main() {
 			case 'i':
 			case 'I':
 				cmd_info();
-				break;
-			case 'c':
-			case 'C':
-				cmd_memcpy();
 				break;
 			case 'd':
 			case 'D':
@@ -631,11 +616,6 @@ void main() {
 			case 'B':
 				print("booting ... ");
 				return;
-				break;
-			case 'r':
-			case 'R':
-				print("rpmem test ...\n");
-				test_rpmem();
 				break;
 			case 'l':
 			case 'L':

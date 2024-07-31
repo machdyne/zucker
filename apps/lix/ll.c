@@ -61,6 +61,7 @@ typedef struct l_value {
 		void *(*fun)(void *, void *);
 		char *str;
 		double val;
+		double val_int;
 	};
 
 	void *car;
@@ -1160,11 +1161,37 @@ l_value *op_mul(l_value *args, l_env *e) { return op_arith(args, e, L_MUL); }
 l_value *op_div(l_value *args, l_env *e) { return op_arith(args, e, L_DIV); }
 l_value *op_mod(l_value *args, l_env *e) { return op_arith(args, e, L_MOD); }
 
+// MISC
+
 l_value *op_time(l_value *args, l_env *e) {
 #ifdef LIX
 	return v_num(reg_rtc);
 #else
 	return v_num(time(NULL));
+#endif
+}
+
+l_value *op_peek(l_value *args, l_env *e) {
+	l_value *x = l_eval(CAR(args), e);
+	if (x->type != NUM)
+		l_log(L_PANIC, "peek expects a number");
+#ifdef LIX
+	return v_num((*(volatile uint32_t *)(uint32_t)x->val));
+#else
+	return NIL;
+#endif
+}
+
+l_value *op_poke(l_value *args, l_env *e) {
+	l_value *x = l_eval(CAR(args), e);
+	l_value *y = l_eval(CAR(CDR(args)), e);
+	if (x->type != NUM || y->type != NUM)
+		l_log(L_PANIC, "poke expects a number");
+#ifdef LIX
+	(*(volatile uint32_t *)(uint32_t)x->val) = (uint32_t)y->val;
+	return TRUE;
+#else
+	return NIL;
 #endif
 }
 
@@ -1609,6 +1636,8 @@ l_env *l_env_std(void) {
 	l_env_set(env, "/", v_fun(&op_div));
 	l_env_set(env, "%", v_fun(&op_mod));
 	l_env_set(env, "time", v_fun(&op_time));
+	l_env_set(env, "peek", v_fun(&op_peek));
+	l_env_set(env, "poke", v_fun(&op_poke));
 	return env;
 };
 

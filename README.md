@@ -163,18 +163,22 @@ The default configuration assumes that a USB-UART PMOD is connected to PMODB (or
 | ``f0005000`` | ``f0005000`` | 1 | left gamepad |
 | ``f0005004`` | ``f0005004`` | 1 | right gamepad |
 | ``f0006000`` | ``f0006004`` | 1 | delay for 1uS |
+| ``f000f000`` | ``f000ffff`` | - | config registers |
 
 ### Video Graphics
 
-There is a 640x480 or 320x240 framebuffer at the beginning of the SRAM, depending on whether or not pixel doubling is enabled.
+When `EN_GPU_FB` is enabled there is a 640x480 or 320x240 framebuffer at the beginning of the SRAM, depending on whether or not pixel doubling `EN_GPU_FB_PIXEL_DOUBLING` is enabled.
 
 Each byte in the framebuffer contains two pixels: XRGBXRGB. X is an unused bit.
 
 The remaining SRAM is currently unused and available.
 
+There is also an experimental 1bpp monochrome mode `EN_GPU_FB_MONO` with a 1024x768 framebuffer.
+
 ### Video Text
 
-There is a 80x25 character buffer in BRAM at 0x10000000.
+There is a 80x25 character buffer in BRAM at 0x10000000. In monochrome mode,
+the character buffer is 128x48.
 
 Writing an ASCII character to this video text memory will display it on the screen.
 
