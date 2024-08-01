@@ -52,8 +52,6 @@ module sysctl #()
 `endif
 
 	output reg LED_A,
-	output reg led_g,
-	output reg led_b,
 
 `ifdef CCEVAL
 	output led2,
@@ -1409,7 +1407,17 @@ module sysctl #()
 			gpu_hline <= { gpu_hline, sram_din[15:0] };
 `endif
 
+`ifdef EN_BSRAM16
+			sram_addr <= (gpu_y << 6) + gpu_refill_words;
+			gpu_hline <= { gpu_hline, sram_din[15:0] };
+`endif
+
 `ifdef EN_SRAM32
+			sram_addr <= (gpu_y << 5) + gpu_refill_words;
+			gpu_hline <= { gpu_hline, sram_din[31:0] };
+`endif
+
+`ifdef EN_BSRAM32
 			sram_addr <= (gpu_y << 5) + gpu_refill_words;
 			gpu_hline <= { gpu_hline, sram_din[31:0] };
 `endif
