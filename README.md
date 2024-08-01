@@ -21,6 +21,7 @@ Zucker was originally created as a demo platform and a starting point for develo
 - [Vanille](https://machdyne.com/product/vanille-computer/)
 - [Obst](https://machdyne.com/product/obst-computer/)
 - [Kölsch](https://machdyne.com/product/kolsch-computer/)
+- [Lakritz](https://machdyne.com/product/lakritz-computer/)
 
 ## Getting Started
 
