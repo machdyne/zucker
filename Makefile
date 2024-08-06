@@ -7,6 +7,11 @@ RTL_PICO=rtl/sysctl_pico.v rtl/uart.v \
 	rtl/pll_ecp5.v \
 	rtl/cpu/picorv32/picorv32.v
 
+ifdef USB
+	RTL_PICO += ext/usb_hid_host/src/usb_hid_host.v \
+		ext/usb_hid_host/src/usb_hid_host_rom.v
+endif
+
 BOARD_LC = $(shell echo '$(BOARD)' | tr '[:upper:]' '[:lower:]')
 BOARD_UC = $(shell echo '$(BOARD)' | tr '[:lower:]' '[:upper:]')
 

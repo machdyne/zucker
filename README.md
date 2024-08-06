@@ -57,6 +57,15 @@ For example:
 make BOARD=eis flash
 ```
 
+### Enable USB HID Host Support
+
+```
+$ cd ext
+$ git clone https://github.com/nand2mario/usb_hid_host
+$ cd ..
+$ make USB=1 BOARD=eis
+```
+
 ### Serial Console
 
 The default configuration assumes that a UART PMOD is connected to PMODB (or PMODA if there's only one PMOD on the device).

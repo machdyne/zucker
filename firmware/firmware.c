@@ -17,6 +17,11 @@
 #define reg_sd (*(volatile uint8_t*)0xf0002000)
 #define reg_ps2_data (*(volatile uint8_t*)0xf0003000)
 #define reg_ps2_ctrl (*(volatile uint8_t*)0xf0003004)
+
+#define reg_uhh_info (*(volatile uint32_t*)0xf0004000)
+#define reg_uhh_keys (*(volatile uint32_t*)0xf0004004)
+#define reg_uhh_mouse (*(volatile uint32_t*)0xf0004008)
+
 #define reg_gamepad_l (*(volatile uint32_t*)0xf0005000)
 #define reg_gamepad_r (*(volatile uint32_t*)0xf0005004)
 #define reg_delay_us (*(volatile uint32_t*)0xf0006000)
@@ -35,6 +40,8 @@
 #define PS2_CTRL_OVERFLOW 0x04
 #define PS2_CTRL_BUSY 0x02
 #define PS2_CTRL_DR 0x01
+
+#define UHH_INFO_DR 0x80000000
 
 #define SD_MISO 0x01
 #define SD_MOSI 0x02
@@ -58,6 +65,7 @@
 #define LIX_SIZE				262144
 
 #include "scancodes.h"
+#include "hidcodes.h"
 
 uint16_t curs_x = 0;
 uint16_t curs_y = 0;
@@ -71,6 +79,7 @@ uint32_t xfer_recv(uint32_t addr);
 uint32_t crc32b(char *data, uint32_t len);
 void putchar_vga(const char c);
 char scantoascii(uint8_t scancode);
+char hidtoascii(uint8_t code);
 
 void sd_init(void);
 void sd_spi_xfer(uint8_t b);
@@ -130,13 +139,20 @@ int getchar()
 {
 	int uart_dr = ((reg_uart_ctrl & UART_CTRL_DR) == UART_CTRL_DR);
 	int kbd_dr = ((reg_ps2_ctrl & PS2_CTRL_DR) == PS2_CTRL_DR);
+	int uhh_dr = ((reg_uhh_info & UHH_INFO_DR) == UHH_INFO_DR);
 	char c;
 
-	if (!uart_dr && !kbd_dr) {
+	if (!uart_dr && !kbd_dr && !uhh_dr) {
 		return EOF;
 	} else {
 		if (kbd_dr) {
 			c = scantoascii(reg_ps2_data);
+			if (c) return c; else return EOF;
+		} else if (uhh_dr) {
+			uint32_t keys = reg_uhh_keys;
+			uint8_t key = (keys >> 24) & 0xff;
+			if (!key) return EOF;
+			uint8_t c = hidtoascii(key);
 			if (c) return c; else return EOF;
 		} else {
 			return reg_uart_data;
@@ -164,6 +180,15 @@ char scantoascii(uint8_t scancode) {
 
 	for (int i = 0; i < sizeof(ps2_scancodes); i++) {
 		if (ps2_scancodes[i] == scancode) return i + 0x30;
+	}
+	return 0;
+
+};
+
+char hidtoascii(uint8_t scancode) {
+
+	for (int i = 0; i < sizeof(hid_codes); i++) {
+		if (hid_codes[i] == scancode) return i + 0x30;
 	}
 	return 0;
 
@@ -353,6 +378,18 @@ void cmd_info() {
 	tmp = reg_leds;
 	print_hex(tmp, 2);
 	print(" ");
+
+	print("uhh info: 0x");
+	print_hex(reg_uhh_info, 8);
+	print(" ");
+
+	print("uhh keys: 0x");
+	print_hex(reg_uhh_keys, 8);
+	print(" ");
+
+	print("uhh mouse: 0x");
+	print_hex(reg_uhh_mouse, 8);
+	print("\n");
 
 	print("uptime: 0x");
 	tmp32 = reg_rtc;

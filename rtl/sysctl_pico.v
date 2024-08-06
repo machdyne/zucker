@@ -255,6 +255,13 @@ module sysctl #()
 	input RP_HOLD,
 `endif
 
+`ifdef EN_USB_HID_HOST
+	inout USBH0_DP,
+	inout USBH0_DN,
+	//inout USBH1_DP,
+	//inout USBH1_DN,
+`endif
+
 );
 
 	reg [31:0] reg_cfg_sys = (SYSCLK / 1_000_000);
@@ -264,6 +271,7 @@ module sysctl #()
 
 	wire clk;
 
+	wire clk12mhz;
 	wire clk25mhz;
 	wire clk50mhz;
 	wire clk75mhz;
@@ -484,8 +492,9 @@ module sysctl #()
 	pll0 #() ecp5_pll0 (
 		.clkin(CLK_48),
 		.clkout0(clk100mhz),
-		.clkout2(clk75mhz),
-		.clkout3(clk50mhz),
+		.clkout1(clk75mhz),
+		.clkout2(clk50mhz),
+		.clkout3(clk12mhz),
 	);
 	pll1 #() ecp5_pll1 (
 		.clkin(clk100mhz),
@@ -592,6 +601,27 @@ module sysctl #()
 		.sclk(MUSLI_SCK),
 		.mosi(MUSLI_MOSI),
 	);
+`endif
+
+`ifdef EN_USB_HID_HOST
+
+	reg uhh_dr;
+	wire uhh_usb_report;
+	wire [1:0] uhh_usb_type;
+	wire [7:0] uhh_key_modifiers, uhh_key1, uhh_key2, uhh_key3, uhh_key4;
+	wire [7:0] uhh_mouse_btn;
+	wire signed [7:0] uhh_mouse_dx, uhh_mouse_dy;
+
+	usb_hid_host usb (
+		.usbclk(clk12mhz), .usbrst_n(resetn),
+		.usb_dm(USBH0_DN), .usb_dp(USBH0_DP),
+		.typ(uhh_usb_type), .report(uhh_usb_report),
+		.key_modifiers(uhh_key_modifiers),
+		.key1(uhh_key1), .key2(uhh_key2), .key3(uhh_key3), .key4(uhh_key4),
+		.mouse_btn(uhh_mouse_btn),
+		.mouse_dx(uhh_mouse_dx), .mouse_dy(uhh_mouse_dy),
+);
+
 `endif
 
 `ifdef EN_RPINT
@@ -1344,6 +1374,10 @@ module sysctl #()
 		ps2_rstrb <= 0;
 `endif
 
+`ifdef EN_USB_HID_HOST
+		if (!uhh_dr) uhh_dr <= uhh_usb_report;
+`endif
+
 		uart0_transmit <= 0;
 
 `ifdef EN_GPU_FB
@@ -1652,6 +1686,10 @@ module sysctl #()
 		gpu_blit_en <= 0;
 		gpu_blit_state <= 0;
 		gpu_blit_ctr <= 0;
+`endif
+
+`ifdef EN_USB_HID_HOST
+		uhh_dr <= 0;
 `endif
 
 		end else if (mem_valid && !mem_ready) begin
@@ -2175,6 +2213,33 @@ module sysctl #()
 							mem_ready <= 1;
 						end
 
+`endif
+
+`ifdef EN_USB_HID_HOST
+						16'h4000: begin
+							if (!mem_wstrb) begin
+								mem_rdata <= { uhh_dr, 5'b0, uhh_usb_type,
+									16'b0,
+									uhh_key_modifiers };
+							end
+							mem_ready <= 1;
+						end
+
+						16'h4004: begin
+							if (!mem_wstrb) begin
+								mem_rdata <= { uhh_key1, uhh_key2, uhh_key3, uhh_key4 };
+							end
+							uhh_dr <= 0;
+							mem_ready <= 1;
+						end
+
+						16'h4008: begin
+							if (!mem_wstrb) begin
+								mem_rdata <= { 8'b0, uhh_mouse_btn,
+									uhh_mouse_dx, uhh_mouse_dy };
+							end
+							mem_ready <= 1;
+						end
 `endif
 
 `ifdef EN_RPINT

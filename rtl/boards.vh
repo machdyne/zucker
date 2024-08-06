@@ -209,6 +209,7 @@
 `define EN_VIDEO
 `define EN_VIDEO_VGA
 `define EN_QQSPI
+`define EN_USB_HID_HOST
 
 `elsif LAKRITZ
 
