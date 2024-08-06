@@ -57,7 +57,7 @@ For example:
 make BOARD=eis flash
 ```
 
-### Enable USB HID Host Support
+### Enable [USB HID Host](https://github.com/nand2mario/usb_hid_host) Support
 
 ```
 $ cd ext
