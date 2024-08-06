@@ -63,7 +63,7 @@ make BOARD=eis flash
 $ cd ext
 $ git clone https://github.com/nand2mario/usb_hid_host
 $ cd ..
-$ make USB=1 BOARD=eis
+$ make USB=1 BOARD=obst
 ```
 
 ### Serial Console
