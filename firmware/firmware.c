@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define EN_BANNER 1
+//#define EN_BANNER 1
 
 #define reg_uart_data (*(volatile uint8_t*)0xf0000000)
 #define reg_uart_ctrl (*(volatile uint8_t*)0xf0000004)
@@ -259,7 +259,6 @@ uint32_t crc32b(char *data, uint32_t len) {
 			mask = -(crc & 1);
 			crc = (crc >> 1) ^ (0xedb88320 & mask);
 		}
-		i = i + 1;
 	}
 	return ~crc;
 }
@@ -470,6 +469,16 @@ void cmd_memzero()
 	print("done.\n");
 }
 
+void cmd_memunzero()
+{
+	print("unzeroing ... ");
+   volatile uint32_t *addr = (uint32_t *)addr_ptr;
+	for (int i = 0; i < (mem_total / sizeof(int)); i++) {
+		(*(volatile uint32_t *)(addr + i)) = 0x12345678;
+	}
+	print("done.\n");
+}
+
 void memcpy(uint32_t dest, uint32_t src, uint32_t n) {
    volatile uint32_t *from = (uint32_t *)src;
    volatile uint32_t *to = (uint32_t *)dest;
@@ -490,7 +499,7 @@ void cmd_sleep() {
 }
 
 void cmd_help() {
-
+/*
 	print("\n [0] toggle address\n");
 	print(" [D] dump memory as bytes\n");
 	print(" [W] dump memory as words\n");
@@ -505,7 +514,7 @@ void cmd_help() {
 	print(" [L] boot LIX\n");
 	print(" [E] echo mode (exit with 0)\n");
 	print(" [H] help\n\n");
-
+*/
 }
 
 void cmd_toggle_addr_ptr(void) {
@@ -665,8 +674,10 @@ void main() {
 				cmd_echo();
 				break;
 			case 'z':
-			case 'Z':
 				cmd_memzero();
+				break;
+			case 'Z':
+				cmd_memunzero();
 				break;
 			default:
 				continue;
